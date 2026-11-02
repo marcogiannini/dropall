@@ -112,6 +112,17 @@ A version that has already been used cannot be published again: pick a higher on
 - The **CI** workflow runs on every push and checks formatting, warnings and tests on
   all three systems, so errors show up before the release.
 
+## Accessibility
+
+Grabbit exposes its interface to screen readers through
+[AccessKit](https://github.com/AccessKit/accesskit): Narrator and NVDA on Windows,
+VoiceOver on macOS, Orca on Linux. Buttons, fields, lists and progress bars have names and
+roles, the link field is labelled, the download state is also spoken in words (waiting,
+in progress, completed, failed) and not only shown with colour, and everything can be
+reached with the keyboard (Tab / Shift+Tab, Space or Enter). Text size can be increased in
+the advanced options. If you find something a screen reader does not read correctly,
+please open an issue.
+
 ## Building locally on Windows
 
 With Rust installed (<https://rustup.rs>) double-click `packaging\windows\build.bat`:

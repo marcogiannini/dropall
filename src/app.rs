@@ -427,7 +427,7 @@ fn card<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
 impl App {
     fn header(&self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.image((self.logo.id(), egui::vec2(46.0, 46.0)));
+            ui.add(egui::Image::new((self.logo.id(), egui::vec2(46.0, 46.0))).alt_text("Grabbit"));
             ui.vertical(|ui| {
                 ui.label(RichText::new("Grabbit").size(28.0).strong());
                 ui.label(
@@ -575,8 +575,9 @@ impl App {
         let field_id = ui.scope_id().with("link_field");
         card(ui, |ui| {
             let mut paste = false;
+            let mut link_label = None;
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Link").strong());
+                link_label = Some(ui.label(RichText::new("Link").strong()).id);
                 paste = ui.small_button(tr!("Incolla", "Paste")).clicked();
                 if ui.small_button(tr!("Svuota", "Clear")).clicked() {
                     self.input.clear();
@@ -592,6 +593,10 @@ impl App {
                         "Paste one or more YouTube or Spotify links here, one per line (Ctrl+V)"
                     )),
             );
+            let resp = match link_label {
+                Some(id) => resp.labelled_by(id),
+                None => resp,
+            };
             resp.context_menu(|ui| {
                 if ui.button(tr!("Incolla", "Paste")).clicked() {
                     paste = true;
@@ -829,7 +834,15 @@ impl App {
                 } else {
                     egui::Sense::hover()
                 });
-                if ui.add(btn).clicked() {
+                let resp = ui.add(btn);
+                resp.widget_info(|| {
+                    egui::WidgetInfo::labeled(
+                        egui::Role::Button,
+                        enabled,
+                        tr!("Scarica", "Download"),
+                    )
+                });
+                if resp.clicked() {
                     self.start_download(ctx);
                 }
                 if !self.jobs.is_empty() && ui.button(tr!("Pulisci elenco", "Clear list")).clicked()
@@ -858,7 +871,24 @@ impl App {
                     let (rect, _) =
                         ui.allocate_exact_size(egui::vec2(12.0, 14.0), egui::Sense::hover());
                     ui.painter().circle_filled(rect.center(), 5.0, col);
-                    ui.add(egui::Label::new(&j.label).truncate());
+                    let state = match j.state {
+                        JobState::Waiting => tr!("in attesa", "waiting"),
+                        JobState::Running => tr!("in corso", "in progress"),
+                        JobState::Done => tr!("completato", "completed"),
+                        JobState::Failed => tr!("non riuscito", "failed"),
+                    };
+                    let resp = ui.add(egui::Label::new(&j.label).truncate());
+                    // il colore da solo non basta: lo stato va detto anche a parole
+                    resp.widget_info(|| {
+                        egui::WidgetInfo::labeled(
+                            egui::Role::Label,
+                            true,
+                            format!("{}: {state}", j.label),
+                        )
+                    });
+                    if j.detail.is_empty() {
+                        ui.label(RichText::new(state).small().color(col));
+                    }
                 });
                 if j.state == JobState::Running {
                     ui.add(egui::ProgressBar::new(j.pct).desired_height(8.0));
