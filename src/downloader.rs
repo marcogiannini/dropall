@@ -41,7 +41,7 @@ struct Job {
 }
 
 /// Toglie i caratteri non ammessi nei nomi file.
-fn sanitize(s: &str) -> String {
+pub(crate) fn sanitize(s: &str) -> String {
     let cleaned: String = s
         .chars()
         .map(|c| {
@@ -284,6 +284,13 @@ fn build_args(job: &Job, cfg: &Config, tools: &Toolset) -> Vec<String> {
             "4",
         ],
     );
+    // limite di velocità condiviso con il download manager
+    if cfg.speed_limit_kbps > 0 {
+        add(
+            &mut a,
+            &["--limit-rate", &format!("{}K", cfg.speed_limit_kbps)],
+        );
+    }
     add(&mut a, &[
         "--progress",
         "--progress-template",
@@ -623,6 +630,16 @@ mod tests {
 
     fn has_pair(args: &[String], k: &str, v: &str) -> bool {
         args.windows(2).any(|w| w[0] == k && w[1] == v)
+    }
+
+    #[test]
+    fn speed_limit_is_passed_to_ytdlp() {
+        let mut cfg = Config::default();
+        let a = build_args(&job("https://youtu.be/x", None, false), &cfg, &toolset());
+        assert!(!a.contains(&"--limit-rate".to_string()));
+        cfg.speed_limit_kbps = 512;
+        let a = build_args(&job("https://youtu.be/x", None, false), &cfg, &toolset());
+        assert!(has_pair(&a, "--limit-rate", "512K"));
     }
 
     #[test]

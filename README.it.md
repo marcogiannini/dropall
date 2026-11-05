@@ -2,7 +2,7 @@
 
 [English](README.md) · **Italiano**
 
-Scarica **video** e **musica** da YouTube e Spotify con un'interfaccia semplice.
+Scarica **video** e **musica** da YouTube e Spotify, e qualsiasi file con il **download manager** incluso (più connessioni, code, pianificatore, limite di velocità), con un'interfaccia semplice.
 Scritto in Rust (leggero: l'AppImage pesa circa 4 MB), si appoggia a
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) e funziona su Windows, Linux e macOS.
 L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsiasi altra lingua.
@@ -16,6 +16,17 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
   `1 - Titolo.mp4`, `2 - Titolo.mp4`… (senza il nome della playlist nel nome del file).
 - Copertina e metadati incorporati nei file.
 - Coda con avanzamento in tempo reale e pulsante **Annulla**.
+- **Download manager** (scheda separata): scarica qualsiasi file da un link `http(s)`.
+  - **Più connessioni** per file (da 1 a 16): il file è diviso in blocchi scaricati in parallelo e
+    ogni connessione prende il blocco successivo appena finisce. Quanto più veloce diventa
+    dipende dal server (vedi «Come si comporta il download manager»).
+  - **Code**: più code con un nome; ognuna scarica i suoi file **uno dopo l'altro**, nell'ordine
+    dell'elenco (sposta su/giù, pausa, riprendi, riprova, rimuovi).
+  - **Pianificatore**: ogni coda può partire e fermarsi da sola agli orari e nei giorni scelti
+    (anche a cavallo della mezzanotte).
+  - **Limite di velocità**: un solo tetto per tutti i download (anche video e musica), così gli
+    altri possono usare la rete.
+  - Pausa e ripresa funzionano anche dopo aver chiuso l'app, se il server supporta gli intervalli.
 - **Si prepara da solo**: al primo avvio scarica yt-dlp, ffmpeg e Deno
   (il runtime JavaScript che yt-dlp richiede per YouTube); a ogni avvio
   controlla se esiste un yt-dlp più recente e lo aggiorna.
@@ -23,6 +34,18 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
   release GitHub e, se è più recente, la scarica, sostituisce l'app e la riavvia.
   In fondo alla finestra una riga dice sempre com'è andato il controllo.
   Su Linux funziona dall'AppImage; si può disattivare nelle opzioni avanzate.
+
+### Come si comporta il download manager
+
+- Accelera i download solo se il **server accetta più connessioni** e il suo limite è per
+  connessione. Se il server ti dà già tutta la velocità della tua linea, o non supporta gli
+  intervalli, non andrai più veloce (Grabbit usa allora una sola connessione e lo scrive). Il
+  «fino al 500 %» che alcuni programmi dichiarano è un caso migliore, non una promessa.
+- Alcuni siti rifiutano molte connessioni insieme o chiedono un accesso: usa meno connessioni.
+  I link che richiedono cookie o login non sono supportati.
+- Il pianificatore funziona con Grabbit **aperto**: se l'app è chiusa all'orario previsto non
+  parte nulla. Se la apri quando l'orario è già dentro l'intervallo, la coda parte subito.
+- Usalo solo per file che hai il diritto di scaricare.
 
 ### Come funziona Spotify
 
@@ -153,6 +176,8 @@ Per forzare la lingua dell'interfaccia (prove): `GRABBIT_LANG=it` oppure `GRABBI
 |---|---|
 | `src/app.rs` | interfaccia grafica (egui) |
 | `src/downloader.rs` | costruisce i comandi yt-dlp, legge l'avanzamento, annulla |
+| `src/dm.rs` | motore del download manager: più connessioni, code, pianificatore, limite |
+| `src/app/dm_tab.rs` | scheda del download manager |
 | `src/tools.rs` | scarica/aggiorna yt-dlp, Deno, ffmpeg |
 | `src/spotify.rs` | legge titolo/artista dai link Spotify |
 | `src/selfupdate.rs` | aggiornamento automatico dell'app |

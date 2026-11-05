@@ -4,6 +4,7 @@
 
 mod app;
 mod config;
+mod dm;
 mod downloader;
 mod i18n;
 mod net;

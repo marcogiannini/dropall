@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Interfaccia grafica (egui).
 use crate::config::{Config, Mode};
+use crate::dm;
 use crate::downloader::{self, Emit, Event, Toolset};
 use crate::selfupdate::{self, Release};
 use crate::tools;
@@ -11,6 +12,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 use std::thread;
+
+mod dm_tab;
 
 // Tema scuro con accento arancione.
 const ACCENT: Color32 = Color32::from_rgb(249, 115, 22);
@@ -64,6 +67,7 @@ enum Msg {
     UpdateStatus(String),
     UpdateDone(Result<(), String>),
     Folder(PathBuf),
+    DmFolder(PathBuf),
     Dl(Event),
 }
 
@@ -102,8 +106,20 @@ struct ToolsUi {
     busy: bool,
 }
 
+/// Le due schede principali: video e musica, oppure download manager.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Tab {
+    Media,
+    Manager,
+}
+
 pub struct App {
     cfg: Config,
+    tab: Tab,
+    dm: dm::Manager,
+    dm_ui: dm_tab::DmUi,
+    /// ultime impostazioni del download manager salvate su disco
+    dm_saved: (PathBuf, u8, u32),
     input: String,
     tx: Sender<Msg>,
     rx: Receiver<Msg>,
@@ -129,8 +145,19 @@ impl App {
         configure_style(&cc.egui_ctx);
         let logo = load_logo(&cc.egui_ctx);
         let (tx, rx) = channel();
+        let cfg = Config::load();
+        let dm = {
+            let ctx = cc.egui_ctx.clone();
+            let path = tools::project_dirs().map(|d| d.config_dir().join("downloads.json"));
+            dm::Manager::new(path, move || ctx.request_repaint())
+        };
+        dm.set_speed_limit_kbps(cfg.speed_limit_kbps);
         let mut app = Self {
-            cfg: Config::load(),
+            tab: Tab::Media,
+            dm,
+            dm_ui: dm_tab::DmUi::new(cfg.speed_limit_kbps),
+            dm_saved: (cfg.dm_dir.clone(), cfg.dm_connections, cfg.speed_limit_kbps),
+            cfg,
             input: String::new(),
             tx,
             rx,
@@ -334,6 +361,7 @@ impl App {
             }
             Msg::UpdateDone(Err(e)) => self.update = UpdateUi::Failed(e),
             Msg::Folder(p) => self.cfg.out_dir = p,
+            Msg::DmFolder(p) => self.cfg.dm_dir = p,
             Msg::Dl(ev) => match ev {
                 Event::Log(l) => {
                     self.log.push(l);
@@ -377,6 +405,12 @@ impl App {
 }
 
 impl eframe::App for App {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        // ferma i download del manager e salva lo stato: alla prossima apertura si riprende da lì
+        self.cfg.save();
+        self.dm.shutdown();
+    }
+
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         while let Ok(m) = self.rx.try_recv() {
             self.handle(m, ctx);
@@ -386,6 +420,16 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         let ctx = &ctx;
+        // le impostazioni del download manager si salvano appena cambiano
+        let now = (
+            self.cfg.dm_dir.clone(),
+            self.cfg.dm_connections,
+            self.cfg.speed_limit_kbps,
+        );
+        if now != self.dm_saved {
+            self.dm_saved = now;
+            self.cfg.save();
+        }
         egui::CentralPanel::default().show(ui, |ui| {
             egui::ScrollArea::vertical()
                 .auto_shrink([false; 2])
@@ -394,16 +438,23 @@ impl eframe::App for App {
                     self.header(ui);
                     ui.add_space(8.0);
                     self.update_banner(ui, ctx);
-                    self.tools_banner(ui, ctx);
-                    ui.add_space(4.0);
-                    self.link_card(ui);
+                    self.tab_bar(ui);
                     ui.add_space(8.0);
-                    self.options_card(ui, ctx);
-                    ui.add_space(10.0);
-                    self.action_row(ui, ctx);
-                    ui.add_space(10.0);
-                    self.queue(ui);
-                    self.log_view(ui);
+                    match self.tab {
+                        Tab::Media => {
+                            self.tools_banner(ui, ctx);
+                            ui.add_space(4.0);
+                            self.link_card(ui);
+                            ui.add_space(8.0);
+                            self.options_card(ui, ctx);
+                            ui.add_space(10.0);
+                            self.action_row(ui, ctx);
+                            ui.add_space(10.0);
+                            self.queue(ui);
+                            self.log_view(ui);
+                        }
+                        Tab::Manager => self.dm_tab(ui, ctx),
+                    }
                     ui.add_space(6.0);
                     self.footer(ui);
                 });
@@ -425,6 +476,37 @@ fn card<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
 }
 
 impl App {
+    /// Schede in alto: "Video e musica" / "Download manager".
+    fn tab_bar(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            for (tab, label) in [
+                (Tab::Media, tr!("Video e musica", "Video & music")),
+                (Tab::Manager, "Download manager"),
+            ] {
+                let selected = self.tab == tab;
+                let text = RichText::new(format!("  {label}  "))
+                    .size(17.0)
+                    .strong()
+                    .color(if selected {
+                        ON_ACCENT
+                    } else {
+                        ui.visuals().text_color()
+                    });
+                if ui.selectable_label(selected, text).clicked() {
+                    self.tab = tab;
+                }
+            }
+            if self.dm.any_active() && self.tab != Tab::Manager {
+                ui.label(
+                    RichText::new(tr!("download in corso", "download in progress"))
+                        .small()
+                        .color(ACCENT_LIGHT),
+                );
+            }
+        });
+        ui.separator();
+    }
+
     fn header(&self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.add(egui::Image::new((self.logo.id(), egui::vec2(46.0, 46.0))).alt_text("Grabbit"));
@@ -712,7 +794,7 @@ impl App {
                         if ui.button(tr!("Sfoglia…", "Browse…")).clicked() {
                             self.pick_folder(ctx);
                         }
-                        ui.label(self.cfg.out_dir.to_string_lossy());
+                        ui.add(egui::Label::new(self.cfg.out_dir.to_string_lossy()).truncate());
                     });
                     ui.end_row();
                 });
