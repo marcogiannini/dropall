@@ -211,13 +211,18 @@ jobs:
           merge-multiple: true
       - name: Elenco dei file
         run: ls -la release
+      # il testo delle note è in .github/release-notes.md: modificalo prima di ogni release
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
+          sparse-checkout: .github/release-notes.md
+          sparse-checkout-cone-mode: false
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.ref }}
           name: Grabbit ${{ needs.prepare.outputs.version }}
           files: release/*
           fail_on_unmatched_files: true
-          # fixed text at the top of the notes; GitHub adds the automatic change list below
-          body: |
-            This program was written with the help of [Claude](https://claude.ai), Anthropic's AI assistant.
+          # fixed text from the file above; GitHub adds the automatic change list below it
+          body_path: .github/release-notes.md
           generate_release_notes: true

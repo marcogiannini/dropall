@@ -1,11 +1,25 @@
 # Grabbit
 
+**Universal downloader**
+
 **English** · [Italiano](README.it.md)
 
 Download **video** and **music** from YouTube and Spotify, and any file with the built-in **download manager** (multiple connections, queues, scheduler, speed limit), with a simple interface.
 Written in Rust (lightweight: the AppImage is about 4 MB), it relies on
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) and runs on Windows, Linux and macOS.
 The interface is in Italian if your system language is Italian, and in English otherwise.
+
+## What's new
+
+- **Download manager**, in its own tab: files from any `http(s)` link with up to 16 connections each,
+  queues downloaded one after the other, a scheduler that starts and stops each queue by itself,
+  and a speed limit shared by all downloads.
+- **Playlists** are saved in a folder named after the playlist, without repeating its name in every file.
+- **Automatic updates at startup**, with a status line that tells you how the check went.
+- **Italian and English** interface, chosen from the system language.
+- **Screen reader support** on Windows, macOS and Linux.
+- **More readable text**: clear contrast for selected text, adjustable text size.
+- **Free software** under the GPL-3.0-or-later license.
 
 ## What it does
 
@@ -88,6 +102,10 @@ The Windows, Linux and macOS versions are built **on GitHub**, automatically
    **Read and write permissions** (needed to create tags and releases).
 
 ### Every time you want to publish a version
+
+**First**, edit `.github/release-notes.md`: its text becomes the top of the release notes (GitHub adds the
+   automatic list of changes below it) and is also shown in the app's "What's new" panel.
+   Keep the first line (the credit to Claude): it is shown on GitHub and hidden in the app.
 
 1. On GitHub open the **Actions** tab → **Release** on the left → **Run workflow**.
 2. In the *New version* field type the number, for example `0.2.0`, and confirm.

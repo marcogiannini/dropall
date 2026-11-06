@@ -21,6 +21,10 @@ const ACCENT: Color32 = Color32::from_rgb(249, 115, 22);
 const ACCENT_LIGHT: Color32 = Color32::from_rgb(251, 146, 60);
 /// Testo sopra uno sfondo arancione (il bianco avrebbe poco contrasto).
 const ON_ACCENT: Color32 = Color32::from_rgb(26, 15, 5);
+/// Sfondo e testo del testo selezionato: arancione scuro con testo quasi bianco
+/// (contrasto circa 5:1; con l'arancione pieno il testo chiaro non si leggeva).
+const SELECTION_BG: Color32 = Color32::from_rgb(170, 74, 12);
+const SELECTION_TEXT: Color32 = Color32::from_rgb(255, 244, 230);
 const OK: Color32 = Color32::from_rgb(64, 185, 120);
 const ERR: Color32 = Color32::from_rgb(235, 87, 87);
 const WARN: Color32 = Color32::from_rgb(240, 205, 70);
@@ -492,7 +496,7 @@ impl App {
                     } else {
                         ui.visuals().text_color()
                     });
-                if ui.selectable_label(selected, text).clicked() {
+                if accent_toggle(ui, selected, text).clicked() {
                     self.tab = tab;
                 }
             }
@@ -513,11 +517,8 @@ impl App {
             ui.vertical(|ui| {
                 ui.label(RichText::new("Grabbit").size(28.0).strong());
                 ui.label(
-                    RichText::new(tr!(
-                        "Video e musica da YouTube e Spotify",
-                        "Video and music from YouTube and Spotify"
-                    ))
-                    .color(ui.visuals().weak_text_color()),
+                    RichText::new(tr!("Downloader universale", "Universal downloader"))
+                        .color(ui.visuals().weak_text_color()),
                 );
             });
         });
@@ -711,7 +712,7 @@ impl App {
                     } else {
                         ui.visuals().text_color()
                     });
-                    if ui.selectable_label(selected, text).clicked() {
+                    if accent_toggle(ui, selected, text).clicked() {
                         self.cfg.mode = mode;
                     }
                 }
@@ -973,7 +974,11 @@ impl App {
                     }
                 });
                 if j.state == JobState::Running {
-                    ui.add(egui::ProgressBar::new(j.pct).desired_height(8.0));
+                    ui.add(
+                        egui::ProgressBar::new(j.pct)
+                            .fill(ACCENT)
+                            .desired_height(8.0),
+                    );
                 }
                 if !j.detail.is_empty() {
                     let col = if j.state == JobState::Failed {
@@ -1065,6 +1070,24 @@ fn open_folder(p: &std::path::Path) {
     let _ = std::process::Command::new(cmd).arg(p).spawn();
 }
 
+/// Pulsante a scheda: arancione pieno con testo scuro quando è selezionato.
+fn accent_toggle(
+    ui: &mut egui::Ui,
+    selected: bool,
+    text: impl Into<egui::WidgetText>,
+) -> egui::Response {
+    let old = (
+        ui.visuals().selection.bg_fill,
+        ui.visuals().selection.stroke,
+    );
+    ui.visuals_mut().selection.bg_fill = ACCENT;
+    ui.visuals_mut().selection.stroke = egui::Stroke::new(1.0, ON_ACCENT);
+    let r = ui.selectable_label(selected, text);
+    ui.visuals_mut().selection.bg_fill = old.0;
+    ui.visuals_mut().selection.stroke = old.1;
+    r
+}
+
 fn load_logo(ctx: &egui::Context) -> egui::TextureHandle {
     let img = image::load_from_memory(include_bytes!("../assets/icon.png"))
         .expect("icona incorporata non valida")
@@ -1123,8 +1146,10 @@ fn configure_style(ctx: &egui::Context) {
         v.override_text_color = None;
 
         // accento arancione: selezione, barra di avanzamento, link, bordo del campo con focus
-        v.selection.bg_fill = ACCENT;
-        v.selection.stroke = egui::Stroke::new(1.0, ACCENT_LIGHT);
+        // bg_fill/stroke della selezione sono anche colore e testo del testo selezionato:
+        // devono contrastare tra loro (i pulsanti "attivi" usano l'arancione pieno: accent_toggle)
+        v.selection.bg_fill = SELECTION_BG;
+        v.selection.stroke = egui::Stroke::new(1.0, SELECTION_TEXT);
         v.hyperlink_color = ACCENT_LIGHT;
 
         v.widgets.noninteractive.bg_fill = Color32::from_rgb(28, 28, 31);

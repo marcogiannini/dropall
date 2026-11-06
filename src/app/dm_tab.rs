@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Scheda "Download manager": link, code, pianificazione e limite di velocità.
-use super::{card, open_folder, App, Msg, ACCENT, ERR, OK, ON_ACCENT, WARN};
+use super::{accent_toggle, card, open_folder, App, Msg, ACCENT, ERR, OK, ON_ACCENT, WARN};
 use crate::dm::{self, Item, Queue, Schedule, State};
 use crate::tr;
 use eframe::egui::{self, Color32, RichText};
@@ -325,7 +325,7 @@ impl App {
                 } else {
                     ui.visuals().text_color()
                 });
-                if ui.selectable_label(selected, rt).clicked() {
+                if accent_toggle(ui, selected, rt).clicked() {
                     self.dm_ui.queue = q.id;
                     self.dm_ui.rename = None;
                     self.dm_ui.confirm_delete_queue = false;
@@ -499,7 +499,7 @@ impl App {
                             } else {
                                 ui.visuals().text_color()
                             });
-                            if ui.selectable_label(on, rt).clicked() {
+                            if accent_toggle(ui, on, rt).clicked() {
                                 s.days[i] = !on;
                             }
                         }
@@ -575,6 +575,7 @@ impl App {
                 {
                     ui.add(
                         egui::ProgressBar::new(it.fraction())
+                            .fill(ACCENT)
                             .desired_height(8.0)
                             .corner_radius(4),
                     );

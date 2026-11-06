@@ -136,15 +136,41 @@ pub fn describe_error(e: &anyhow::Error) -> String {
 
 /// Note da mostrare nell'app: tolgono la riga di credito che sta solo nella pagina GitHub.
 fn clean_notes(body: &str) -> String {
-    body.lines()
+    let text = body
+        .lines()
         .filter(|l| {
             !l.contains("è stato scritto con l'aiuto di")
                 && !l.contains("was written with the help of")
         })
+        .map(plain_line)
         .collect::<Vec<_>>()
-        .join("\n")
-        .trim()
-        .to_string()
+        .join("\n");
+    // al massimo una riga vuota di fila
+    let mut out = String::new();
+    let mut blank = 0;
+    for l in text.lines() {
+        blank = if l.trim().is_empty() { blank + 1 } else { 0 };
+        if blank <= 1 {
+            out.push_str(l);
+            out.push('\n');
+        }
+    }
+    out.trim().to_string()
+}
+
+/// Toglie dal markdown ciò che nell'app comparirebbe come simboli: titoli, grassetto, apici.
+fn plain_line(l: &str) -> String {
+    let t = l.trim_start();
+    let t = if t.starts_with('#') {
+        t.trim_start_matches('#').trim_start()
+    } else {
+        t
+    };
+    let t = match t.strip_prefix("* ") {
+        Some(rest) => format!("- {rest}"),
+        None => t.to_string(),
+    };
+    t.replace("**", "").replace('`', "")
 }
 
 /// Confronta la release GitHub con la versione in uso.
@@ -267,9 +293,26 @@ mod tests {
     }
 
     #[test]
+    fn markdown_is_cleaned_in_app_notes() {
+        let notes = include_str!("../.github/release-notes.md");
+        let c = clean_notes(notes);
+        assert!(
+            !c.contains("Claude"),
+            "la riga di credito deve restare nascosta"
+        );
+        assert!(
+            !c.contains('#') && !c.contains("**") && !c.contains('`'),
+            "{c}"
+        );
+        assert!(c.starts_with("Grabbit — universal downloader"), "{c}");
+        assert!(c.contains("- Download manager"), "{c}");
+        assert!(!c.contains("\n\n\n"));
+    }
+
+    #[test]
     fn credit_line_is_hidden_in_app_notes() {
         let body = "Questo programma è stato scritto con l'aiuto di [Claude](https://claude.ai), l'assistente AI di Anthropic.\n\n## Cosa cambia\n* Tema scuro";
-        assert_eq!(clean_notes(body), "## Cosa cambia\n* Tema scuro");
+        assert_eq!(clean_notes(body), "Cosa cambia\n- Tema scuro");
         assert_eq!(
             clean_notes("solo credito: è stato scritto con l'aiuto di X"),
             ""
