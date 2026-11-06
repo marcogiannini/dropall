@@ -11,6 +11,8 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
 
 ## Novità
 
+- **Installer per Windows** (`Grabbit-Setup-windows-x86_64.exe`): installa solo per il tuo utente, senza permessi di
+  amministratore, con voce nel menu Start e disinstallatore; l'app continua ad aggiornarsi da sola. Resta anche l'`.exe` portatile.
 - **Download manager**, in una scheda a parte: file da qualsiasi link `http(s)` con fino a 16 connessioni
   ciascuno, code scaricate una dopo l'altra, un pianificatore che avvia e ferma ogni coda da sola
   e un limite di velocità condiviso da tutti i download.
@@ -18,6 +20,7 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
 - **Aggiornamento automatico all'avvio**, con una riga di stato che dice com'è andato il controllo.
 - Interfaccia in **italiano e inglese**, scelta in base alla lingua del sistema.
 - **Supporto agli screen reader** su Windows, macOS e Linux.
+- **Barra del titolo corretta**: su Windows non compare più chiara e senza pulsanti al primo avvio; su Linux segue il tema di sistema.
 - **Testo più leggibile**: buon contrasto per il testo selezionato, dimensione regolabile.
 - **Software libero** con licenza GPL-3.0-or-later.
 
@@ -79,7 +82,8 @@ Spotify cifra l'audio (DRM) e yt-dlp non lo scarica. Grabbit legge soltanto i
 
 | Sistema | File dalla pagina *Releases* | Note |
 |---|---|---|
-| Windows | `grabbit-windows-x86_64.exe` | doppio clic; SmartScreen può avvisare perché l'eseguibile non è firmato |
+| Windows (installer) | `Grabbit-Setup-windows-x86_64.exe` | **consigliato**: installa solo per il tuo utente (nessun permesso di amministratore), aggiunge la voce nel menu Start e un disinstallatore, icona sul desktop facoltativa; poi l'app si aggiorna da sola. SmartScreen può avvisare perché non è firmato |
+| Windows (portatile) | `grabbit-windows-x86_64.exe` | senza installazione: doppio clic e via |
 | Linux | `grabbit-linux-x86_64.AppImage` | `chmod +x` e doppio clic (l'auto-aggiornamento funziona solo da AppImage) |
 | macOS | `Grabbit-macos-aarch64.app.zip` (Apple Silicon) oppure `…-x86_64.app.zip` (Intel) | decomprimi, trascina in *Applicazioni*; la prima volta tasto destro → Apri (l'app non è notarizzata). Se macOS la dichiara «danneggiata»: `xattr -cr /Applications/Grabbit.app` |
 
@@ -131,7 +135,8 @@ Una versione già usata non si può ripubblicare: scegline una più alta.
 
 | File | A cosa serve |
 |---|---|
-| `grabbit-windows-x86_64.exe` | Windows |
+| `Grabbit-Setup-windows-x86_64.exe` | installer Windows (nuove installazioni) |
+| `grabbit-windows-x86_64.exe` | Windows portatile, usato anche dagli aggiornamenti automatici |
 | `grabbit-linux-x86_64.AppImage` | Linux Intel/AMD |
 | `grabbit-linux-aarch64.AppImage` | Linux ARM (solo se il repository è pubblico) |
 | `Grabbit-macos-aarch64.app.zip` / `Grabbit-macos-x86_64.app.zip` | macOS, prima installazione |
@@ -167,7 +172,8 @@ apri una segnalazione.
 ## Compilare in locale su Windows
 
 Con Rust installato (<https://rustup.rs>) fai doppio clic su `packaging\windows\build.bat`:
-crea `grabbit-windows-x86_64.exe`.
+crea `grabbit-windows-x86_64.exe` e, se è installato [Inno Setup 6](https://jrsoftware.org/isinfo.php), anche
+l'installer `Grabbit-Setup-windows-x86_64.exe`.
 
 ## Compilare da sorgente
 

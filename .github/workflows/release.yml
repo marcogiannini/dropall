@@ -102,10 +102,29 @@ jobs:
       - name: Rinomina l'eseguibile
         shell: bash
         run: cp target/release/grabbit.exe grabbit-windows-x86_64.exe
+      # installer (Inno Setup): installa per l'utente corrente, quindi l'app può aggiornarsi da sola
+      - name: Crea l'installer
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          choco install innosetup --no-progress -y
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) {
+            $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |
+              Where-Object { Test-Path $_ } | Select-Object -First 1
+          }
+          if (-not $iscc) { Write-Error "ISCC.exe non trovato"; exit 1 }
+          & $iscc "/DAppVersion=$env:VERSION" "/DSourceExe=$PWD\grabbit-windows-x86_64.exe" "/O$PWD" packaging\windows\grabbit.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (-not (Test-Path Grabbit-Setup-windows-x86_64.exe)) { Write-Error "installer non creato"; exit 1 }
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: grabbit-windows-x86_64.exe
+          path: |
+            grabbit-windows-x86_64.exe
+            Grabbit-Setup-windows-x86_64.exe
+          if-no-files-found: error
 
   linux:
     needs: prepare
