@@ -1663,7 +1663,7 @@ dependencies = [
 
 [[package]]
 name = "grabbit"
-version = "0.2.3"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",

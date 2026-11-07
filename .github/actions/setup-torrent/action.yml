@@ -15,14 +15,18 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        mkdir -p "$RUNNER_TEMP/boost-dl"
-        curl -fsSL --retry 5 -o "$RUNNER_TEMP/boost-dl/boost.tar.gz" \
+        # cd + relative paths: GNU tar on Windows reads "D:\..." as a remote host
+        mkdir -p "$RUNNER_TEMP/boost-dl" "$RUNNER_TEMP/boost"
+        cd "$RUNNER_TEMP/boost-dl"
+        curl -fsSL --retry 5 -o boost.tar.gz \
           https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.gz
-        mkdir -p "$RUNNER_TEMP/boost"
-        tar -xzf "$RUNNER_TEMP/boost-dl/boost.tar.gz" -C "$RUNNER_TEMP/boost" \
-          --strip-components=1 boost_1_86_0/boost
+        cd "$RUNNER_TEMP/boost"
+        tar -xzf ../boost-dl/boost.tar.gz --strip-components=1 boost_1_86_0/boost
         # the headers live in <root>/boost
     - name: Export GRABBIT_BOOST_ROOT
       shell: bash
       run: |
-        echo "GRABBIT_BOOST_ROOT=$(cd "$RUNNER_TEMP/boost" && pwd)" >> "$GITHUB_ENV"
+        root="$(cd "$RUNNER_TEMP/boost" && pwd)"
+        # CMake on Windows needs a Windows-style path (D:/a/_temp/boost), not /d/a/...
+        if command -v cygpath >/dev/null 2>&1; then root="$(cygpath -m "$root")"; fi
+        echo "GRABBIT_BOOST_ROOT=$root" >> "$GITHUB_ENV"
