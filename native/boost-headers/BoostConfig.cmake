@@ -1,0 +1,28 @@
+# Minimal CMake package for a header-only Boost source tree (no b2 build, no
+# BoostConfig.cmake of its own). Used when GRABBIT_BOOST_ROOT points to a
+# folder that contains "boost/". Only Boost::headers is provided, which is all
+# libtorrent 2.x needs.
+set(_root "$ENV{GRABBIT_BOOST_ROOT}")
+if(NOT EXISTS "${_root}/boost/version.hpp")
+  set(Boost_FOUND FALSE)
+  set(Boost_NOT_FOUND_MESSAGE "GRABBIT_BOOST_ROOT='${_root}' does not contain boost/version.hpp")
+  return()
+endif()
+file(STRINGS "${_root}/boost/version.hpp" _line REGEX "^#define BOOST_VERSION [0-9]+")
+string(REGEX MATCH "[0-9]+" _v "${_line}")
+math(EXPR Boost_MAJOR_VERSION "${_v} / 100000")
+math(EXPR Boost_MINOR_VERSION "${_v} / 100 % 1000")
+math(EXPR Boost_SUBMINOR_VERSION "${_v} % 100")
+set(Boost_VERSION "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}")
+set(Boost_VERSION_STRING "${Boost_VERSION}")
+set(Boost_INCLUDE_DIRS "${_root}")
+set(Boost_INCLUDE_DIR "${_root}")
+if(NOT TARGET Boost::headers)
+  add_library(Boost::headers INTERFACE IMPORTED)
+  set_target_properties(Boost::headers PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_root}")
+endif()
+if(NOT TARGET Boost::boost)
+  add_library(Boost::boost INTERFACE IMPORTED)
+  target_link_libraries(Boost::boost INTERFACE Boost::headers)
+endif()
+set(Boost_FOUND TRUE)

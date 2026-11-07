@@ -28,5 +28,6 @@ runs:
       run: |
         root="$(cd "$RUNNER_TEMP/boost" && pwd)"
         # CMake on Windows needs a Windows-style path (D:/a/_temp/boost), not /d/a/...
+        test -f "$root/boost/version.hpp" || { echo "Boost headers missing in $root"; ls -la "$root"; exit 1; }
         if command -v cygpath >/dev/null 2>&1; then root="$(cygpath -m "$root")"; fi
         echo "GRABBIT_BOOST_ROOT=$root" >> "$GITHUB_ENV"

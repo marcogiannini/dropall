@@ -15,14 +15,12 @@ set(python-bindings OFF CACHE BOOL "" FORCE)
 set(deprecated-functions OFF CACHE BOOL "" FORCE)
 set(encryption ON CACHE BOOL "" FORCE)
 
-# A plain Boost source tree (headers only) has no CMake config files: use the
-# classic module and point it at the headers. Otherwise rely on the system one.
+# A plain Boost source tree (headers only) has no CMake config files and the
+# FindBoost module is gone in recent CMake: use the tiny package in boost-headers/.
+# Without GRABBIT_BOOST_ROOT the system Boost is used.
 if(DEFINED ENV{GRABBIT_BOOST_ROOT} AND NOT "$ENV{GRABBIT_BOOST_ROOT}" STREQUAL "")
-  set(Boost_INCLUDE_DIR "$ENV{GRABBIT_BOOST_ROOT}" CACHE PATH "" FORCE)
-  set(Boost_NO_BOOST_CMAKE ON)
-  if(POLICY CMP0167)
-    cmake_policy(SET CMP0167 OLD)
-  endif()
+  set(Boost_DIR "${CMAKE_CURRENT_SOURCE_DIR}/boost-headers" CACHE PATH "" FORCE)
+  set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
 endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/libtorrent libtorrent EXCLUDE_FROM_ALL)
