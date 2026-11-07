@@ -35,6 +35,14 @@ pub struct Config {
     pub dm_connections: u8,
     /// limite di velocità in KB/s per tutti i download (0 = nessun limite)
     pub speed_limit_kbps: u32,
+    /// torrent: cartella di destinazione
+    pub torrent_dir: PathBuf,
+    /// torrent: continua a condividere (seed) dopo il download
+    pub torrent_seed: bool,
+    /// torrent: limite di upload in KB/s (0 = nessun limite)
+    pub torrent_up_kbps: u32,
+    /// area di notifica: minimizzando la finestra si nasconde lì e i download continuano
+    pub tray: bool,
 }
 
 impl Default for Config {
@@ -49,6 +57,10 @@ impl Default for Config {
         Self {
             mode: Mode::Video,
             dm_dir: out_dir.clone(),
+            torrent_dir: out_dir.clone(),
+            torrent_seed: false,
+            torrent_up_kbps: 0,
+            tray: true,
             dm_connections: 8,
             speed_limit_kbps: 0,
             out_dir,

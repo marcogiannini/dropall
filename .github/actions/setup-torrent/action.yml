@@ -1,0 +1,28 @@
+name: Setup torrent build dependencies
+description: >
+  Downloads the Boost headers (header-only use, needed to compile libtorrent) and
+  exports GRABBIT_BOOST_ROOT. CMake and Perl (for OpenSSL) are already on the runners.
+runs:
+  using: composite
+  steps:
+    - id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/boost
+        key: boost-headers-1.86.0-v1
+    - name: Download Boost headers
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "$RUNNER_TEMP/boost-dl"
+        curl -fsSL --retry 5 -o "$RUNNER_TEMP/boost-dl/boost.tar.gz" \
+          https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.gz
+        mkdir -p "$RUNNER_TEMP/boost"
+        tar -xzf "$RUNNER_TEMP/boost-dl/boost.tar.gz" -C "$RUNNER_TEMP/boost" \
+          --strip-components=1 boost_1_86_0/boost
+        # the headers live in <root>/boost
+    - name: Export GRABBIT_BOOST_ROOT
+      shell: bash
+      run: |
+        echo "GRABBIT_BOOST_ROOT=$(cd "$RUNNER_TEMP/boost" && pwd)" >> "$GITHUB_ENV"

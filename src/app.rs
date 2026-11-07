@@ -14,6 +14,7 @@ use std::sync::Arc;
 use std::thread;
 
 mod dm_tab;
+mod torrent_tab;
 
 // Tema scuro con accento arancione.
 const ACCENT: Color32 = Color32::from_rgb(249, 115, 22);
@@ -72,6 +73,8 @@ enum Msg {
     UpdateDone(Result<(), String>),
     Folder(PathBuf),
     DmFolder(PathBuf),
+    TorFolder(PathBuf),
+    TorFiles(Vec<PathBuf>),
     Dl(Event),
 }
 
@@ -115,6 +118,7 @@ struct ToolsUi {
 enum Tab {
     Media,
     Manager,
+    Torrent,
 }
 
 pub struct App {
@@ -123,7 +127,16 @@ pub struct App {
     dm: dm::Manager,
     dm_ui: dm_tab::DmUi,
     /// ultime impostazioni del download manager salvate su disco
-    dm_saved: (PathBuf, u8, u32),
+    dm_saved: (PathBuf, u8, u32, PathBuf, bool, u32, bool),
+    hub: Arc<crate::torrent::Hub>,
+    tor_ui: torrent_tab::TorUi,
+    /// link magnet e file .torrent arrivati dalla riga di comando o da un'altra istanza
+    incoming: Option<Receiver<Vec<String>>>,
+    /// area di notifica attiva (icona creata)
+    tray: Option<crate::tray::Tray>,
+    quit_requested: bool,
+    show_licenses: bool,
+    tray_failed: bool,
     input: String,
     tx: Sender<Msg>,
     rx: Receiver<Msg>,
@@ -145,7 +158,11 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(
+        cc: &eframe::CreationContext<'_>,
+        initial: Vec<String>,
+        incoming: Option<Receiver<Vec<String>>>,
+    ) -> Self {
         configure_style(&cc.egui_ctx);
         let logo = load_logo(&cc.egui_ctx);
         let (tx, rx) = channel();
@@ -156,11 +173,34 @@ impl App {
             dm::Manager::new(path, move || ctx.request_repaint())
         };
         dm.set_speed_limit_kbps(cfg.speed_limit_kbps);
+        let hub = {
+            let ctx = cc.egui_ctx.clone();
+            crate::torrent::Hub::new(tools::data_dir().join("torrents"), move || {
+                ctx.request_repaint()
+            })
+        };
+        hub.set_seed_after(cfg.torrent_seed);
+        hub.set_limits(cfg.speed_limit_kbps, cfg.torrent_up_kbps);
         let mut app = Self {
             tab: Tab::Media,
             dm,
             dm_ui: dm_tab::DmUi::new(cfg.speed_limit_kbps),
-            dm_saved: (cfg.dm_dir.clone(), cfg.dm_connections, cfg.speed_limit_kbps),
+            dm_saved: (
+                cfg.dm_dir.clone(),
+                cfg.dm_connections,
+                cfg.speed_limit_kbps,
+                cfg.torrent_dir.clone(),
+                cfg.torrent_seed,
+                cfg.torrent_up_kbps,
+                cfg.tray,
+            ),
+            hub,
+            tor_ui: torrent_tab::TorUi::default(),
+            incoming,
+            tray: None,
+            quit_requested: false,
+            show_licenses: false,
+            tray_failed: false,
             cfg,
             input: String::new(),
             tx,
@@ -180,6 +220,9 @@ impl App {
         };
         cc.egui_ctx
             .set_zoom_factor(app.cfg.ui_scale.clamp(0.8, 2.0));
+        if !initial.is_empty() {
+            app.add_torrent_inputs(initial);
+        }
         app.start_setup(&cc.egui_ctx);
         // il controllo degli aggiornamenti parte subito, senza aspettare yt-dlp e ffmpeg
         app.start_update_check(&cc.egui_ctx);
@@ -366,6 +409,13 @@ impl App {
             Msg::UpdateDone(Err(e)) => self.update = UpdateUi::Failed(e),
             Msg::Folder(p) => self.cfg.out_dir = p,
             Msg::DmFolder(p) => self.cfg.dm_dir = p,
+            Msg::TorFolder(p) => self.cfg.torrent_dir = p,
+            Msg::TorFiles(files) => self.add_torrent_inputs(
+                files
+                    .iter()
+                    .map(|f| f.to_string_lossy().into_owned())
+                    .collect(),
+            ),
             Msg::Dl(ev) => match ev {
                 Event::Log(l) => {
                     self.log.push(l);
@@ -413,12 +463,15 @@ impl eframe::App for App {
         // ferma i download del manager e salva lo stato: alla prossima apertura si riprende da lì
         self.cfg.save();
         self.dm.shutdown();
+        self.hub.shutdown();
     }
 
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         while let Ok(m) = self.rx.try_recv() {
             self.handle(m, ctx);
         }
+        self.poll_incoming(ctx);
+        self.poll_tray(ctx);
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
@@ -429,10 +482,23 @@ impl eframe::App for App {
             self.cfg.dm_dir.clone(),
             self.cfg.dm_connections,
             self.cfg.speed_limit_kbps,
+            self.cfg.torrent_dir.clone(),
+            self.cfg.torrent_seed,
+            self.cfg.torrent_up_kbps,
+            self.cfg.tray,
         );
         if now != self.dm_saved {
+            if now.2 != self.dm_saved.2 {
+                self.hub.set_limits(now.2, now.5);
+            }
             self.dm_saved = now;
             self.cfg.save();
+        }
+        self.handle_dropped_files(ctx);
+        self.licenses_window(ctx);
+        // le velocità e le percentuali dei torrent si aggiornano anche senza input
+        if self.hub.is_running() {
+            ctx.request_repaint_after(std::time::Duration::from_millis(500));
         }
         egui::CentralPanel::default().show(ui, |ui| {
             egui::ScrollArea::vertical()
@@ -458,6 +524,7 @@ impl eframe::App for App {
                             self.log_view(ui);
                         }
                         Tab::Manager => self.dm_tab(ui, ctx),
+                        Tab::Torrent => self.torrent_tab(ui, ctx),
                     }
                     ui.add_space(6.0);
                     self.footer(ui);
@@ -485,7 +552,11 @@ impl App {
         ui.horizontal(|ui| {
             for (tab, label) in [
                 (Tab::Media, tr!("Video e musica", "Video & music")),
-                (Tab::Manager, "Download manager"),
+                (
+                    Tab::Manager,
+                    tr!("File (Download manager)", "Files (Download manager)"),
+                ),
+                (Tab::Torrent, "Torrent"),
             ] {
                 let selected = self.tab == tab;
                 let text = RichText::new(format!("  {label}  "))
@@ -500,7 +571,9 @@ impl App {
                     self.tab = tab;
                 }
             }
-            if self.dm.any_active() && self.tab != Tab::Manager {
+            if (self.dm.any_active() && self.tab != Tab::Manager)
+                || (self.hub.any_active() && self.tab != Tab::Torrent)
+            {
                 ui.label(
                     RichText::new(tr!("download in corso", "download in progress"))
                         .small()
@@ -509,6 +582,21 @@ impl App {
             }
         });
         ui.separator();
+        let hint = match self.tab {
+            Tab::Media => tr!(
+                "Incolla il link di un video, di una playlist o di un brano di YouTube o Spotify.",
+                "Paste the link of a YouTube or Spotify video, playlist or track."
+            ),
+            Tab::Manager => tr!(
+                "Scarica qualsiasi file da un indirizzo web, con più connessioni, code e pianificazione.",
+                "Download any file from a web address, with multiple connections, queues and scheduling."
+            ),
+            Tab::Torrent => tr!(
+                "Scarica con BitTorrent da link magnet o da file .torrent.",
+                "Download with BitTorrent from magnet links or .torrent files."
+            ),
+        };
+        ui.label(RichText::new(hint).color(ui.visuals().weak_text_color()));
     }
 
     fn header(&self, ui: &mut egui::Ui) {
@@ -519,6 +607,14 @@ impl App {
                 ui.label(
                     RichText::new(tr!("Downloader universale", "Universal downloader"))
                         .color(ui.visuals().weak_text_color()),
+                );
+                ui.label(
+                    RichText::new(tr!(
+                        "Video e musica · file da qualsiasi sito · torrent e magnet",
+                        "Video & music · files from any site · torrents & magnets"
+                    ))
+                    .small()
+                    .color(ui.visuals().weak_text_color()),
                 );
             });
         });
@@ -974,11 +1070,7 @@ impl App {
                     }
                 });
                 if j.state == JobState::Running {
-                    ui.add(
-                        egui::ProgressBar::new(j.pct)
-                            .fill(ACCENT)
-                            .desired_height(8.0),
-                    );
+                    progress_row(ui, j.pct);
                 }
                 if !j.detail.is_empty() {
                     let col = if j.state == JobState::Failed {
@@ -1009,17 +1101,18 @@ impl App {
         });
     }
 
-    fn footer(&self, ui: &mut egui::Ui) {
+    fn footer(&mut self, ui: &mut egui::Ui) {
         ui.separator();
         let yt = self.tools.ytdlp.as_deref().unwrap_or("…");
         let ok = |b: bool| if b { "ok" } else { tr!("manca", "missing") };
         ui.label(
             RichText::new(format!(
-                "Grabbit {} · yt-dlp {} · ffmpeg {} · Deno {}",
+                "Grabbit {} · yt-dlp {} · ffmpeg {} · Deno {} · libtorrent {}",
                 selfupdate::CURRENT,
                 yt,
                 ok(self.tools.ffmpeg.is_some()),
                 ok(self.tools.deno.is_some()),
+                crate::torrent::version(),
             ))
             .small()
             .color(ui.visuals().weak_text_color()),
@@ -1031,6 +1124,21 @@ impl App {
                     .color(ui.visuals().weak_text_color()),
             );
         }
+        ui.horizontal_wrapped(|ui| {
+            ui.checkbox(
+                &mut self.cfg.tray,
+                tr!(
+                    "Minimizza nell'area di notifica (i download continuano)",
+                    "Minimize to the system tray (downloads keep going)"
+                ),
+            );
+            if ui
+                .small_button(tr!("Licenze e crediti", "Licenses & credits"))
+                .clicked()
+            {
+                self.show_licenses = !self.show_licenses;
+            }
+        });
         ui.label(
             RichText::new(tr!("Usalo solo per contenuti che hai il diritto di scaricare, nel rispetto del copyright e dei termini dei servizi.", "Use it only for content you have the right to download, respecting copyright and the services' terms."))
                 .small()
@@ -1174,4 +1282,134 @@ fn configure_style(ctx: &egui::Context) {
         v.widgets.active.corner_radius = r;
         v.widgets.open.corner_radius = r;
     });
+}
+
+/// Barra di avanzamento con la percentuale di completamento accanto.
+fn progress_row(ui: &mut egui::Ui, fraction: f32) {
+    let f = fraction.clamp(0.0, 1.0);
+    ui.horizontal(|ui| {
+        let w = (ui.available_width() - 56.0).max(40.0);
+        ui.add(
+            egui::ProgressBar::new(f)
+                .fill(ACCENT)
+                .desired_width(w)
+                .desired_height(8.0)
+                .corner_radius(4),
+        );
+        // arrotondato per difetto: "100%" compare solo a lavoro finito
+        let pct = (f * 100.0).floor() as u32;
+        ui.add_sized(
+            [44.0, 16.0],
+            egui::Label::new(RichText::new(format!("{pct}%")).strong()),
+        );
+    });
+}
+
+impl App {
+    /// Aggiunge link magnet, indirizzi e file .torrent alla scheda Torrent.
+    fn add_torrent_inputs(&mut self, lines: Vec<String>) {
+        self.tab = Tab::Torrent;
+        self.hub.add_lines(lines, self.cfg.torrent_dir.clone());
+    }
+
+    /// Elementi arrivati da riga di comando o da un'altra istanza (magnet, .torrent).
+    fn poll_incoming(&mut self, ctx: &egui::Context) {
+        let Some(rx) = &self.incoming else {
+            return;
+        };
+        let mut got: Vec<String> = Vec::new();
+        let mut any = false;
+        while let Ok(v) = rx.try_recv() {
+            any = true;
+            got.extend(v);
+        }
+        if !any {
+            return;
+        }
+        // un messaggio anche vuoto significa "porta la finestra in primo piano"
+        self.show_window(ctx);
+        if !got.is_empty() {
+            self.add_torrent_inputs(got);
+        }
+    }
+
+    fn licenses_window(&mut self, ctx: &egui::Context) {
+        let mut open = self.show_licenses;
+        if open {
+            egui::Window::new(tr!("Licenze e crediti", "Licenses & credits"))
+                .open(&mut open)
+                .default_size([620.0, 460.0])
+                .show(ctx, |ui| {
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        ui.add(egui::Label::new(
+                            RichText::new(include_str!("../THIRD_PARTY_LICENSES.txt"))
+                                .monospace()
+                                .size(12.0),
+                        ));
+                    });
+                });
+        }
+        self.show_licenses = open;
+    }
+
+    fn show_window(&self, ctx: &egui::Context) {
+        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+        ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+        ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+    }
+
+    /// File .torrent trascinati sulla finestra.
+    fn handle_dropped_files(&mut self, ctx: &egui::Context) {
+        let dropped: Vec<String> = ctx.input(|i| {
+            i.raw
+                .dropped_files
+                .iter()
+                .map(|f| f.path().to_string_lossy().into_owned())
+                .filter(|p| crate::torrent::is_torrent_source(p))
+                .collect()
+        });
+        if !dropped.is_empty() {
+            self.add_torrent_inputs(dropped);
+        }
+    }
+
+    /// Area di notifica: nasconde la finestra quando si minimizza (o si chiude con
+    /// download in corso) e gestisce le voci del menu dell'icona.
+    fn poll_tray(&mut self, ctx: &egui::Context) {
+        if self.cfg.tray && self.tray.is_none() && !self.tray_failed {
+            self.tray = crate::tray::Tray::new(ctx);
+            self.tray_failed = self.tray.is_none();
+        }
+        if !self.cfg.tray {
+            self.tray = None;
+            self.tray_failed = false;
+        }
+        let Some(tray) = self.tray.as_mut() else {
+            return;
+        };
+        let busy = self.running || self.dm.any_active() || self.hub.any_active();
+        tray.set_status(busy);
+        for ev in tray.events() {
+            match ev {
+                crate::tray::TrayEvent::Show => self.show_window(ctx),
+                crate::tray::TrayEvent::Quit => {
+                    self.quit_requested = true;
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
+            }
+        }
+        let (minimized, closing) = ctx.input(|i| {
+            (
+                i.viewport().minimized == Some(true),
+                i.viewport().close_requested(),
+            )
+        });
+        if minimized && self.cfg.tray {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+        }
+        if closing && self.cfg.tray && busy && !self.quit_requested {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+        }
+    }
 }

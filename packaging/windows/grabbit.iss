@@ -42,10 +42,23 @@ Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "torrentassoc"; Description: "Open magnet links and .torrent files with Grabbit / Apri link magnet e file .torrent con Grabbit"; GroupDescription: "Torrent:"
 
 [Files]
 Source: "{#SourceExe}"; DestDir: "{app}"; DestName: "Grabbit.exe"; Flags: ignoreversion
 Source: "..\..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\..\THIRD_PARTY_LICENSES.txt"; DestDir: "{app}"; Flags: ignoreversion
+
+[Registry]
+; solo per l'utente corrente (HKCU): nessun permesso di amministratore
+Root: HKCU; Subkey: "Software\Classes\magnet"; ValueType: string; ValueName: ""; ValueData: "URL:Magnet link"; Flags: uninsdeletekey; Tasks: torrentassoc
+Root: HKCU; Subkey: "Software\Classes\magnet"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Tasks: torrentassoc
+Root: HKCU; Subkey: "Software\Classes\magnet\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\Grabbit.exe,0"; Tasks: torrentassoc
+Root: HKCU; Subkey: "Software\Classes\magnet\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\Grabbit.exe"" ""%1"""; Tasks: torrentassoc
+Root: HKCU; Subkey: "Software\Classes\.torrent"; ValueType: string; ValueName: ""; ValueData: "Grabbit.torrent"; Flags: uninsdeletevalue; Tasks: torrentassoc
+Root: HKCU; Subkey: "Software\Classes\Grabbit.torrent"; ValueType: string; ValueName: ""; ValueData: "Torrent"; Flags: uninsdeletekey; Tasks: torrentassoc
+Root: HKCU; Subkey: "Software\Classes\Grabbit.torrent\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\Grabbit.exe,0"; Tasks: torrentassoc
+Root: HKCU; Subkey: "Software\Classes\Grabbit.torrent\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\Grabbit.exe"" ""%1"""; Tasks: torrentassoc
 
 [Icons]
 Name: "{group}\Grabbit"; Filename: "{app}\Grabbit.exe"

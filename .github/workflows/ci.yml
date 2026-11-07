@@ -21,6 +21,7 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+      - uses: ./.github/actions/setup-torrent
       - name: Formattazione
         if: matrix.os == 'ubuntu-22.04'
         run: cargo fmt --check

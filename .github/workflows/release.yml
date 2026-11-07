@@ -98,6 +98,7 @@ jobs:
           ref: ${{ needs.prepare.outputs.ref }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - uses: ./.github/actions/setup-torrent
       - run: cargo build --release
       - name: Rinomina l'eseguibile
         shell: bash
@@ -135,6 +136,7 @@ jobs:
           ref: ${{ needs.prepare.outputs.ref }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - uses: ./.github/actions/setup-torrent
       # "bash" davanti allo script: caricando da zip o da Windows il file perde il
       # permesso di esecuzione e GitHub darebbe "exit code 126".
       - name: Costruisci l'AppImage
@@ -157,6 +159,7 @@ jobs:
           ref: ${{ needs.prepare.outputs.ref }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - uses: ./.github/actions/setup-torrent
       - name: Costruisci l'AppImage
         run: ARCH=aarch64 bash packaging/linux/build-appimage.sh
       - uses: actions/upload-artifact@v4
@@ -175,6 +178,7 @@ jobs:
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
       - uses: Swatinem/rust-cache@v2
+      - uses: ./.github/actions/setup-torrent
       - name: Compila per Apple Silicon e Intel
         run: |
           cargo build --release --target aarch64-apple-darwin
@@ -195,6 +199,7 @@ jobs:
             mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
             cp "$BIN" "$APP/Contents/MacOS/grabbit"
             cp assets/icon.icns "$APP/Contents/Resources/icon.icns"
+            cp LICENSE THIRD_PARTY_LICENSES.txt "$APP/Contents/Resources/"
             cat > "$APP/Contents/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

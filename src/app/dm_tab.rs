@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Scheda "Download manager": link, code, pianificazione e limite di velocità.
-use super::{accent_toggle, card, open_folder, App, Msg, ACCENT, ERR, OK, ON_ACCENT, WARN};
+use super::{
+    accent_toggle, card, open_folder, progress_row, App, Msg, ACCENT, ERR, OK, ON_ACCENT, WARN,
+};
 use crate::dm::{self, Item, Queue, Schedule, State};
 use crate::tr;
 use eframe::egui::{self, Color32, RichText};
@@ -92,8 +94,8 @@ impl App {
                     .desired_rows(3)
                     .desired_width(f32::INFINITY)
                     .hint_text(tr!(
-                        "Incolla qui uno o più indirizzi http(s) di file, uno per riga",
-                        "Paste one or more http(s) file addresses here, one per line"
+                        "Incolla qui uno o più indirizzi http(s) di file, uno per riga (i link magnet e .torrent vanno nella scheda Torrent)",
+                        "Paste one or more http(s) file addresses here, one per line (magnet and .torrent links go to the Torrent tab)"
                     )),
             );
             if let Some(id) = label_id {
@@ -208,26 +210,40 @@ impl App {
                 });
                 let go = r1.clicked();
                 if go || r2.clicked() {
+                    // magnet e .torrent vanno al motore torrent
+                    let (tor, plain): (Vec<&str>, Vec<&str>) = self
+                        .dm_ui
+                        .input
+                        .lines()
+                        .map(|l| l.trim())
+                        .filter(|l| !l.is_empty())
+                        .partition(|l| crate::torrent::is_torrent_source(l));
+                    let tor: Vec<String> = tor.into_iter().map(String::from).collect();
+                    let plain = plain.join("\n");
+                    if !tor.is_empty() {
+                        self.add_torrent_inputs(tor);
+                    }
                     let n = self.dm.add(
-                        &self.dm_ui.input,
+                        &plain,
                         &self.cfg.dm_dir,
                         self.dm_ui.queue,
                         self.cfg.dm_connections,
                     );
-                    if n > 0 {
+                    if n > 0 || plain.trim().is_empty() {
                         self.dm_ui.input.clear();
-                        if go {
+                        if go && n > 0 {
                             self.dm.start_queue(self.dm_ui.queue);
                         }
                     }
                 }
             });
             if !self.dm_ui.input.trim().is_empty()
-                && !self
-                    .dm_ui
-                    .input
-                    .lines()
-                    .any(|l| l.trim().starts_with("http://") || l.trim().starts_with("https://"))
+                && !self.dm_ui.input.lines().any(|l| {
+                    let t = l.trim();
+                    t.starts_with("http://")
+                        || t.starts_with("https://")
+                        || crate::torrent::is_torrent_source(t)
+                })
             {
                 ui.label(
                     RichText::new(tr!(
@@ -573,12 +589,7 @@ impl App {
                     && it.total.is_some()
                     && it.downloaded > 0
                 {
-                    ui.add(
-                        egui::ProgressBar::new(it.fraction())
-                            .fill(ACCENT)
-                            .desired_height(8.0)
-                            .corner_radius(4),
-                    );
+                    progress_row(ui, it.fraction());
                 }
                 let mut parts: Vec<String> = Vec::new();
                 if !size.is_empty() {

@@ -18,6 +18,8 @@ mkdir -p "$APPDIR/usr/bin" \
 cp target/release/grabbit                "$APPDIR/usr/bin/grabbit"
 cp packaging/linux/grabbit.desktop       "$APPDIR/grabbit.desktop"
 cp packaging/linux/grabbit.desktop       "$APPDIR/usr/share/applications/grabbit.desktop"
+mkdir -p "$APPDIR/usr/share/doc/grabbit"
+cp LICENSE THIRD_PARTY_LICENSES.txt      "$APPDIR/usr/share/doc/grabbit/"
 cp assets/icon.png                       "$APPDIR/grabbit.png"
 cp assets/icon.png                       "$APPDIR/usr/share/icons/hicolor/512x512/apps/grabbit.png"
 ln -sf usr/bin/grabbit                   "$APPDIR/AppRun"

@@ -10,6 +10,12 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/OWNER/grabbit"
 build = "build.rs"
 
+[features]
+default = ["torrent"]
+# BitTorrent (libtorrent, BSD-3-Clause) compilato e collegato staticamente.
+# Senza cmake/Boost si può disattivare con --no-default-features.
+torrent = ["dep:cmake", "dep:openssl-src"]
+
 [dependencies]
 # GUI leggera: renderer "glow" (OpenGL) al posto del più pesante wgpu
 eframe = { version = "0.37", default-features = false, features = [
@@ -32,11 +38,19 @@ sys-locale = "0.3.2"
 chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+ksni = { version = "0.3", features = ["blocking"] }
 tar = "0.4"
 xz2 = { version = "0.1", features = ["static"] }
 
+[build-dependencies]
+cmake = { version = "0.1", optional = true }
+openssl-src = { version = "300", optional = true }
+
 [target.'cfg(windows)'.build-dependencies]
 winresource = "0.1"
+
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
+tray-icon = "0.21"
 
 [profile.release]
 opt-level = "s"

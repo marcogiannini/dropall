@@ -4,13 +4,17 @@
 
 **English** · [Italiano](README.it.md)
 
-Download **video** and **music** from YouTube and Spotify, and any file with the built-in **download manager** (multiple connections, queues, scheduler, speed limit), with a simple interface.
+Download **video** and **music** from YouTube and Spotify, any file with the built-in **download manager** (multiple connections, queues, scheduler, speed limit), and **torrents** (magnet links and `.torrent` files), with a simple interface.
 Written in Rust (lightweight: the AppImage is about 4 MB), it relies on
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) and runs on Windows, Linux and macOS.
 The interface is in Italian if your system language is Italian, and in English otherwise.
 
 ## What's new
 
+- **Torrents**, in their own tab (powered by [libtorrent](https://github.com/arvidn/libtorrent)): paste magnet links or
+  `.torrent` addresses, open `.torrent` files from your computer, or click a magnet link in your browser.
+- **System tray**: minimize to the notification area and downloads keep going.
+- **Percentage** next to every progress bar, and a clearer three-tab interface.
 - **Windows installer** (`Grabbit-Setup-windows-x86_64.exe`): installs for your user only, no administrator rights,
   with a Start menu entry and an uninstaller; the app keeps updating itself. The portable `.exe` is still there.
 - **Download manager**, in its own tab: files from any `http(s)` link with up to 16 connections each,
@@ -33,6 +37,22 @@ The interface is in Italian if your system language is Italian, and in English o
   `1 - Title.mp4`, `2 - Title.mp4`… (the playlist name is not part of the file name).
 - Cover art and metadata embedded in the files.
 - Queue with live progress and a **Cancel** button.
+- **Torrents** (separate tab), three ways to add them:
+  - paste **magnet links** or addresses of `.torrent` files (one per line; the Files tab also forwards them here);
+  - **open `.torrent` files** from your computer: *Open .torrent file…* button, drag and drop onto the window, or
+    "Open with" / double-click when Grabbit is the default app;
+  - click a **magnet link in your browser**: Grabbit starts, or is brought to the front if already running
+    (single instance), and adds the torrent.
+  Torrents resume after a restart (resume data is saved), you can choose to keep seeding after the download,
+  limit the upload speed (the download limit is the shared one of the Files tab) and delete a torrent with or without its files.
+  The Windows installer offers to register Grabbit for `magnet:` links and `.torrent` files (current user only);
+  on Linux the desktop entry declares them. **macOS**: not registered as a handler yet: use paste, the open button or drag and drop.
+- **System tray**: with the option at the bottom of the window (on by default) minimizing hides Grabbit in the
+  notification area and videos, files and torrents keep downloading; closing the window while something is downloading
+  does the same. Click the icon to bring the window back; the menu has *Show* and *Quit*.
+  On Linux the tray uses the StatusNotifierItem standard (KDE, Xfce, Cinnamon, and GNOME with the AppIndicator extension);
+  if your desktop has no tray, the window just minimizes normally.
+- **Percentage of completion** next to every progress bar (videos, files, torrents).
 - **Download manager** (separate tab): download any file from an `http(s)` link.
   - **Multiple connections** per file (1 to 16): the file is split into blocks fetched in
     parallel, and each connection takes the next block as soon as it finishes. How much faster it
@@ -63,6 +83,14 @@ The interface is in Italian if your system language is Italian, and in English o
   nothing starts. If it is opened when the time is already inside the window, the queue starts
   right away.
 - Use it only for files you have the right to download.
+
+### How torrents behave
+
+- BitTorrent shares data with other people: while a torrent downloads (and while it seeds, if you choose so) your
+  computer uploads to others. Use the upload limit if needed, and only download content you have the right to download and share.
+- Finding peers needs a working network: magnet links first look for the torrent's info through trackers and the DHT,
+  which can take a little. The status shows *Fetching info* until it is found.
+- The first time, your firewall or router may ask about Grabbit; Grabbit listens on port 6881 and tries UPnP/NAT-PMP.
 
 ### How Spotify works
 
@@ -184,7 +212,12 @@ packaging/linux/build-appimage.sh        # create the AppImage (Linux)
 python3 scripts/make_icon.py             # regenerate the icons (needs Pillow)
 ```
 
-Requires Rust 1.85+. On Linux no special development libraries are needed.
+Requires Rust 1.85+, **CMake**, a C++17 compiler and the **Boost** headers (the torrent engine, libtorrent, is
+compiled in; OpenSSL is built from source by the `openssl-src` crate, which needs `perl` and `make`; no system
+OpenSSL needed). Point `GRABBIT_BOOST_ROOT` to a folder that contains `boost/`, or install the system package
+(`libboost-dev`, `brew install boost`). On Windows use the *x64 Native Tools* prompt (MSVC) and a Boost source tree.
+To build without torrent support (no CMake/Boost needed): `cargo build --release --no-default-features`.
+The GitHub workflows download Boost by themselves.
 
 Tests against a real yt-dlp (optional):
 
@@ -202,6 +235,12 @@ To force the interface language (for testing): `GRABBIT_LANG=it` or `GRABBIT_LAN
 | `src/downloader.rs` | builds the yt-dlp commands, reads progress, cancels |
 | `src/dm.rs` | download manager engine: multi-connection, queues, scheduler, speed limit |
 | `src/app/dm_tab.rs` | download manager tab |
+| `src/app/torrent_tab.rs` | torrent tab |
+| `src/torrent.rs` | Rust side of the torrent engine (session, links, `.torrent` files) |
+| `native/gt.cpp` | small C++ layer over libtorrent |
+| `third_party/libtorrent` | libtorrent source (BSD-3-Clause), see *License* |
+| `src/tray.rs` | system tray icon |
+| `src/ipc.rs` | single instance: forwards magnet links and `.torrent` files to the running app |
 | `src/tools.rs` | downloads/updates yt-dlp, Deno, ffmpeg |
 | `src/spotify.rs` | reads title/artist from Spotify links |
 | `src/selfupdate.rs` | automatic app updates |
@@ -229,3 +268,10 @@ Grabbit is free software, released under the
 [GNU General Public License v3.0 or later](https://www.gnu.org/licenses/gpl-3.0.html)
 (`GPL-3.0-or-later`); see `LICENSE`. You may use, study, share and modify it; if you
 distribute modified versions, they must be released under the same license with their source code.
+
+### Third-party software
+
+The torrent feature includes [libtorrent](https://github.com/arvidn/libtorrent) 2.0 (BSD 3-Clause, © Arvid Norberg and
+contributors; its source is in `third_party/libtorrent`), the Boost C++ headers (Boost Software License 1.0) and OpenSSL 3
+(Apache License 2.0), all compiled into the program and compatible with the GPL-3.0-or-later. Their license
+texts are in `THIRD_PARTY_LICENSES.txt`, shown in the app (*Licenses & credits*) and shipped with every download.
