@@ -42,6 +42,91 @@ mod torrent {
         None
     }
 
+    const BOOST_URL: &str = "https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.gz";
+
+    fn has_boost(dir: &Path) -> bool {
+        dir.join("boost/version.hpp").exists()
+    }
+
+    /// Trova gli header di Boost. `Some(cartella)` = da passare a CMake come
+    /// GRABBIT_BOOST_ROOT; `None` = si usa il Boost di sistema.
+    fn ensure_boost(out_dir: &Path) -> Option<PathBuf> {
+        if let Ok(v) = std::env::var("GRABBIT_BOOST_ROOT") {
+            if !v.is_empty() {
+                let p = PathBuf::from(&v);
+                if has_boost(&p) {
+                    return Some(p);
+                }
+                println!(
+                    "cargo:warning=GRABBIT_BOOST_ROOT={v} has no boost/version.hpp, ignoring it"
+                );
+            }
+        }
+        if [
+            "/usr/include",
+            "/usr/local/include",
+            "/opt/homebrew/include",
+        ]
+        .iter()
+        .any(|d| has_boost(Path::new(d)))
+        {
+            return None;
+        }
+        let dest = out_dir.join("boost-headers");
+        if has_boost(&dest) {
+            return Some(dest);
+        }
+        let url = std::env::var("GRABBIT_BOOST_URL").unwrap_or_else(|_| BOOST_URL.to_string());
+        println!("cargo:warning=Boost headers not found: downloading {url}");
+        if let Err(e) = download_boost(&url, &dest) {
+            panic!(
+                "Boost headers not found and the download failed ({e}). Set GRABBIT_BOOST_ROOT to a \
+                 folder containing `boost/`, install libboost-dev / `brew install boost`, or build \
+                 without torrent support: cargo build --no-default-features"
+            );
+        }
+        Some(dest)
+    }
+
+    /// Scarica l'archivio di Boost ed estrae solo la cartella `boost/` (header).
+    fn download_boost(url: &str, dest: &Path) -> Result<(), String> {
+        let agent: ureq::Agent = ureq::Agent::config_builder()
+            .timeout_global(Some(std::time::Duration::from_secs(900)))
+            .build()
+            .into();
+        let resp = agent.get(url).call().map_err(|e| e.to_string())?;
+        let gz = flate2::read::GzDecoder::new(resp.into_body().into_reader());
+        let mut ar = tar::Archive::new(gz);
+        let _ = std::fs::remove_dir_all(dest);
+        std::fs::create_dir_all(dest).map_err(|e| e.to_string())?;
+        for entry in ar.entries().map_err(|e| e.to_string())? {
+            let mut entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path().map_err(|e| e.to_string())?.into_owned();
+            let mut comps = path.components();
+            comps.next(); // boost_1_86_0/
+            let rel: PathBuf = comps.collect();
+            if !rel.starts_with("boost") || !entry.header().entry_type().is_file() {
+                continue;
+            }
+            if rel
+                .components()
+                .any(|c| matches!(c, std::path::Component::ParentDir))
+            {
+                continue;
+            }
+            let target = dest.join(&rel);
+            if let Some(d) = target.parent() {
+                std::fs::create_dir_all(d).map_err(|e| e.to_string())?;
+            }
+            entry.unpack(&target).map_err(|e| e.to_string())?;
+        }
+        if has_boost(dest) {
+            Ok(())
+        } else {
+            Err("archive does not contain boost/version.hpp".into())
+        }
+    }
+
     pub fn build() {
         for p in [
             "native",
@@ -54,25 +139,9 @@ mod torrent {
 
         let target = std::env::var("TARGET").unwrap_or_default();
 
-        // Messaggio chiaro se Boost manca, invece di un errore di CMake
-        let boost_env = std::env::var("GRABBIT_BOOST_ROOT").unwrap_or_default();
-        let has_boost = (!boost_env.is_empty()
-            && Path::new(&boost_env).join("boost/version.hpp").exists())
-            || [
-                "/usr/include",
-                "/usr/local/include",
-                "/opt/homebrew/include",
-            ]
-            .iter()
-            .any(|d| Path::new(d).join("boost/version.hpp").exists());
-        if !has_boost {
-            panic!(
-                "Boost headers not found. Set GRABBIT_BOOST_ROOT to a folder containing `boost/` \
-                 (in GitHub workflows add `- uses: ./.github/actions/setup-torrent` before the \
-                 cargo step), install libboost-dev / `brew install boost`, or build without \
-                 torrent support: cargo build --no-default-features"
-            );
-        }
+        // Boost: variabile d'ambiente, sistema, oppure scaricato qui (solo header)
+        let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+        let boost_root = ensure_boost(&out_dir);
 
         // OpenSSL statico
         let artifacts = openssl_src::Build::new().build();
@@ -85,6 +154,12 @@ mod torrent {
             .define("OPENSSL_INCLUDE_DIR", artifacts.include_dir())
             .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5")
             .build_target("grabbit_gt");
+        if let Some(root) = &boost_root {
+            cfg.env(
+                "GRABBIT_BOOST_ROOT",
+                root.to_string_lossy().replace('\\', "/"),
+            );
+        }
         let out = cfg.build();
 
         let build_dir = out.join("build");

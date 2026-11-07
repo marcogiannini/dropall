@@ -219,7 +219,7 @@ libtorrent, viene compilato dentro il programma; OpenSSL lo compila da sorgente 
 `perl` e `make`: non serve OpenSSL di sistema). Imposta `GRABBIT_BOOST_ROOT` su una cartella che contiene `boost/`,
 oppure installa il pacchetto di sistema (`libboost-dev`, `brew install boost`). Su Windows usa il prompt
 *x64 Native Tools* (MSVC) e i sorgenti di Boost. Per compilare senza torrent (senza CMake/Boost):
-`cargo build --release --no-default-features`. I workflow di GitHub scaricano Boost da soli.
+`cargo build --release --no-default-features`. Se Boost non si trova, lo script di build scarica gli header da solo (serve internet; con `GRABBIT_BOOST_URL` si indica un mirror).
 
 Prove con yt-dlp reale (facoltative):
 

@@ -217,7 +217,7 @@ compiled in; OpenSSL is built from source by the `openssl-src` crate, which need
 OpenSSL needed). Point `GRABBIT_BOOST_ROOT` to a folder that contains `boost/`, or install the system package
 (`libboost-dev`, `brew install boost`). On Windows use the *x64 Native Tools* prompt (MSVC) and a Boost source tree.
 To build without torrent support (no CMake/Boost needed): `cargo build --release --no-default-features`.
-The GitHub workflows download Boost by themselves.
+If no Boost is found, the build script downloads the headers by itself (needs internet; set `GRABBIT_BOOST_URL` to use a mirror).
 
 Tests against a real yt-dlp (optional):
 

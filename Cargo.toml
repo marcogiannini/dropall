@@ -43,6 +43,10 @@ tar = "0.4"
 xz2 = { version = "0.1", features = ["static"] }
 
 [build-dependencies]
+# download of the Boost headers when they are not installed (see build.rs)
+ureq = "3"
+flate2 = "1"
+tar = "0.4"
 cmake = { version = "0.1", optional = true }
 openssl-src = { version = "300", optional = true }
 

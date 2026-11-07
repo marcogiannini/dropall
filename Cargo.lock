@@ -1670,6 +1670,7 @@ dependencies = [
  "cmake",
  "directories",
  "eframe",
+ "flate2",
  "image",
  "ksni",
  "openssl-src",
