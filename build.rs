@@ -87,8 +87,14 @@ mod torrent {
             "cargo:rustc-link-search=native={}",
             artifacts.lib_dir().display()
         );
-        println!("cargo:rustc-link-lib=static=ssl");
-        println!("cargo:rustc-link-lib=static=crypto");
+        // MSVC names the static OpenSSL libraries libssl.lib / libcrypto.lib
+        let (ssl, crypto) = if target.contains("msvc") {
+            ("libssl", "libcrypto")
+        } else {
+            ("ssl", "crypto")
+        };
+        println!("cargo:rustc-link-lib=static={ssl}");
+        println!("cargo:rustc-link-lib=static={crypto}");
 
         if target.contains("windows") {
             for l in [

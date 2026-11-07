@@ -3,7 +3,7 @@
 //! Linux: StatusNotifierItem (ksni). Windows/macOS: `tray-icon`.
 use crate::tr;
 use eframe::egui;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver};
 
 pub enum TrayEvent {
     Show,
@@ -24,6 +24,7 @@ fn icon_rgba(size: u32) -> Option<(Vec<u8>, u32, u32)> {
 mod imp {
     use super::*;
     use ksni::blocking::{Handle, TrayMethods};
+    use std::sync::mpsc::Sender;
 
     struct SniTray {
         tx: Sender<TrayEvent>,
