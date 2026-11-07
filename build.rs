@@ -54,6 +54,26 @@ mod torrent {
 
         let target = std::env::var("TARGET").unwrap_or_default();
 
+        // Messaggio chiaro se Boost manca, invece di un errore di CMake
+        let boost_env = std::env::var("GRABBIT_BOOST_ROOT").unwrap_or_default();
+        let has_boost = (!boost_env.is_empty()
+            && Path::new(&boost_env).join("boost/version.hpp").exists())
+            || [
+                "/usr/include",
+                "/usr/local/include",
+                "/opt/homebrew/include",
+            ]
+            .iter()
+            .any(|d| Path::new(d).join("boost/version.hpp").exists());
+        if !has_boost {
+            panic!(
+                "Boost headers not found. Set GRABBIT_BOOST_ROOT to a folder containing `boost/` \
+                 (in GitHub workflows add `- uses: ./.github/actions/setup-torrent` before the \
+                 cargo step), install libboost-dev / `brew install boost`, or build without \
+                 torrent support: cargo build --no-default-features"
+            );
+        }
+
         // OpenSSL statico
         let artifacts = openssl_src::Build::new().build();
         let ssl_root = artifacts.lib_dir().parent().unwrap().to_path_buf();
