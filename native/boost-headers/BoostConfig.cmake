@@ -1,11 +1,11 @@
 # Minimal CMake package for a header-only Boost source tree (no b2 build, no
-# BoostConfig.cmake of its own). Used when GRABBIT_BOOST_ROOT points to a
+# BoostConfig.cmake of its own). Used when DROPALL_BOOST_ROOT points to a
 # folder that contains "boost/". Only Boost::headers is provided, which is all
 # libtorrent 2.x needs.
-set(_root "$ENV{GRABBIT_BOOST_ROOT}")
+set(_root "$ENV{DROPALL_BOOST_ROOT}")
 if(NOT EXISTS "${_root}/boost/version.hpp")
   set(Boost_FOUND FALSE)
-  set(Boost_NOT_FOUND_MESSAGE "GRABBIT_BOOST_ROOT='${_root}' does not contain boost/version.hpp")
+  set(Boost_NOT_FOUND_MESSAGE "DROPALL_BOOST_ROOT='${_root}' does not contain boost/version.hpp")
   return()
 endif()
 file(STRINGS "${_root}/boost/version.hpp" _line REGEX "^#define BOOST_VERSION [0-9]+")

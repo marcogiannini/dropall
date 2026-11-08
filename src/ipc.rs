@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Istanza unica: se Grabbit è già aperto, un secondo avvio (per esempio da un
+//! Istanza unica: se Dropall è già aperto, un secondo avvio (per esempio da un
 //! link magnet nel browser o da un file .torrent) passa gli argomenti
 //! all'istanza esistente tramite una connessione locale (127.0.0.1) protetta
 //! da un token casuale, poi termina.

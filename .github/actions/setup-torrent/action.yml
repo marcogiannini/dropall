@@ -1,7 +1,7 @@
 name: Setup torrent build dependencies
 description: >
   Downloads the Boost headers (header-only use, needed to compile libtorrent) and
-  exports GRABBIT_BOOST_ROOT. CMake and Perl (for OpenSSL) are already on the runners.
+  exports DROPALL_BOOST_ROOT. CMake and Perl (for OpenSSL) are already on the runners.
 runs:
   using: composite
   steps:
@@ -23,11 +23,11 @@ runs:
         cd "$RUNNER_TEMP/boost"
         tar -xzf ../boost-dl/boost.tar.gz --strip-components=1 boost_1_86_0/boost
         # the headers live in <root>/boost
-    - name: Export GRABBIT_BOOST_ROOT
+    - name: Export DROPALL_BOOST_ROOT
       shell: bash
       run: |
         root="$(cd "$RUNNER_TEMP/boost" && pwd)"
         # CMake on Windows needs a Windows-style path (D:/a/_temp/boost), not /d/a/...
         test -f "$root/boost/version.hpp" || { echo "Boost headers missing in $root"; ls -la "$root"; exit 1; }
         if command -v cygpath >/dev/null 2>&1; then root="$(cygpath -m "$root")"; fi
-        echo "GRABBIT_BOOST_ROOT=$root" >> "$GITHUB_ENV"
+        echo "DROPALL_BOOST_ROOT=$root" >> "$GITHUB_ENV"

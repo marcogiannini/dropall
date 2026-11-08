@@ -1,6 +1,6 @@
-/* Thin C API over libtorrent used by Grabbit (see src/torrent.rs). */
-#ifndef GRABBIT_GT_H
-#define GRABBIT_GT_H
+/* Thin C API over libtorrent used by Dropall (see src/torrent.rs). */
+#ifndef DROPALL_GT_H
+#define DROPALL_GT_H
 #include <stdint.h>
 #ifdef __cplusplus
 extern "C" {

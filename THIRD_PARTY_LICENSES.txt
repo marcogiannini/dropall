@@ -1,16 +1,16 @@
 THIRD-PARTY SOFTWARE NOTICES / NOTE SUL SOFTWARE DI TERZI
 =========================================================
 
-Grabbit is free software, licensed under the GNU General Public License,
+Dropall is free software, licensed under the GNU General Public License,
 version 3 or (at your option) any later version (see LICENSE).
-Grabbit è software libero, distribuito con licenza GNU GPL versione 3 o
+Dropall è software libero, distribuito con licenza GNU GPL versione 3 o
 (a tua scelta) successiva (vedi LICENSE).
 
-The BitTorrent feature of Grabbit includes the following third-party
+The BitTorrent feature of Dropall includes the following third-party
 components, compiled statically into the program. All their licenses are
 compatible with the GPL-3.0-or-later. Source code of libtorrent is included
 in the repository under third_party/libtorrent.
-La funzione BitTorrent di Grabbit include i componenti di terze parti
+La funzione BitTorrent di Dropall include i componenti di terze parti
 elencati qui sotto, compilati staticamente nel programma. Tutte le licenze
 sono compatibili con la GPL-3.0-or-later. Il codice sorgente di libtorrent è
 incluso nel repository in third_party/libtorrent.
@@ -22,7 +22,7 @@ incluso nel repository in third_party/libtorrent.
     Boost Software License 1.0.
  4. OpenSSL 3.x — https://www.openssl.org — Apache License 2.0.
 
-Rust crates used by Grabbit (egui/eframe, ureq, serde, tray-icon, ksni, ...)
+Rust crates used by Dropall (egui/eframe, ureq, serde, tray-icon, ksni, ...)
 are distributed under MIT and/or Apache-2.0 licenses; see each crate.
 Le librerie Rust usate (egui/eframe, ureq, serde, tray-icon, ksni, ...) sono
 distribuite con licenze MIT e/o Apache-2.0; vedi ciascuna libreria.

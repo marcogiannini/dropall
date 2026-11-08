@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Dropall
+GenericName=Universal downloader
+GenericName[it]=Downloader universale
+Comment=Download video, music, any file and torrents
+Comment[it]=Scarica video, musica, qualsiasi file e torrent
+Exec=dropall %U
+Icon=dropall
+Terminal=false
+Categories=AudioVideo;Network;
+Keywords=youtube;spotify;download;video;music;musica;yt-dlp;torrent;magnet;bittorrent;
+MimeType=x-scheme-handler/magnet;application/x-bittorrent;
+StartupWMClass=dropall

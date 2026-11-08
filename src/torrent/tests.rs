@@ -2,7 +2,7 @@ use super::*;
 use std::time::{Duration, Instant};
 
 fn tmp(name: &str) -> std::path::PathBuf {
-    let d = std::env::temp_dir().join(format!("grabbit-torrent-{name}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("dropall-torrent-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     d

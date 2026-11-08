@@ -314,8 +314,8 @@ impl App {
             }
             ui.label(
                 RichText::new(tr!(
-                    "Vale per tutti i download di Grabbit, video e musica compresi, così gli altri possono usare la rete. Per i video già avviati vale dal prossimo.",
-                    "Applies to all Grabbit downloads, including video and music, so others can use the network. For videos already started it applies from the next one."
+                    "Vale per tutti i download di Dropall, video e musica compresi, così gli altri possono usare la rete. Per i video già avviati vale dal prossimo.",
+                    "Applies to all Dropall downloads, including video and music, so others can use the network. For videos already started it applies from the next one."
                 ))
                 .small()
                 .color(ui.visuals().weak_text_color()),
@@ -537,8 +537,8 @@ impl App {
                 });
                 ui.label(
                     RichText::new(tr!(
-                        "Grabbit deve essere aperto all'orario previsto. Se all'apertura l'orario è già dentro l'intervallo, la coda parte subito.",
-                        "Grabbit must be open at the scheduled time. If the time is already inside the window when the app opens, the queue starts right away."
+                        "Dropall deve essere aperto all'orario previsto. Se all'apertura l'orario è già dentro l'intervallo, la coda parte subito.",
+                        "Dropall must be open at the scheduled time. If the time is already inside the window when the app opens, the queue starts right away."
                     ))
                     .small()
                     .color(ui.visuals().weak_text_color()),

@@ -458,8 +458,8 @@ impl Hub {
         }
         if !Self::available() {
             bail!(crate::tr!(
-                "questa versione di Grabbit è stata compilata senza supporto torrent",
-                "this build of Grabbit was compiled without torrent support"
+                "questa versione di Dropall è stata compilata senza supporto torrent",
+                "this build of Dropall was compiled without torrent support"
             ));
         }
         let s = Arc::new(Session::new(&self.state_dir, 0, false)?);

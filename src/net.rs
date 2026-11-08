@@ -7,7 +7,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::time::Duration;
 
-pub const USER_AGENT: &str = concat!("Grabbit/", env!("CARGO_PKG_VERSION"));
+pub const USER_AGENT: &str = concat!("Dropall/", env!("CARGO_PKG_VERSION"));
 
 fn agent() -> ureq::Agent {
     // ureq 3 legge da solo le variabili d'ambiente del proxy (HTTPS_PROXY...).

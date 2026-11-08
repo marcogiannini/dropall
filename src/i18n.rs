@@ -7,8 +7,8 @@ use std::sync::OnceLock;
 static ITALIAN: OnceLock<bool> = OnceLock::new();
 
 fn detect() -> bool {
-    // GRABBIT_LANG=it|en forza la lingua (utile per prove e assistenza)
-    if let Ok(v) = std::env::var("GRABBIT_LANG") {
+    // DROPALL_LANG=it|en forza la lingua (utile per prove e assistenza)
+    if let Ok(v) = std::env::var("DROPALL_LANG") {
         return v.trim().to_ascii_lowercase().starts_with("it");
     }
     sys_locale::get_locale()

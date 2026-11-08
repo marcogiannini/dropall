@@ -3,15 +3,15 @@
 // Su Linux/macOS non fa nulla.
 fn main() {
     println!("cargo:rerun-if-changed=assets/icon.ico");
-    println!("cargo:rerun-if-env-changed=GRABBIT_REPO");
+    println!("cargo:rerun-if-env-changed=DROPALL_REPO");
     #[cfg(feature = "torrent")]
     torrent::build();
     #[cfg(windows)]
     {
         let mut res = winresource::WindowsResource::new();
         res.set_icon("assets/icon.ico");
-        res.set("ProductName", "Grabbit");
-        res.set("FileDescription", "Grabbit - scarica video e musica");
+        res.set("ProductName", "Dropall");
+        res.set("FileDescription", "Dropall - scarica video e musica");
         if let Err(e) = res.compile() {
             eprintln!("avviso: impossibile incorporare l'icona: {e}");
         }
@@ -21,7 +21,7 @@ fn main() {
 /// Compila libtorrent (BSD-3-Clause, in `third_party/libtorrent`) insieme al
 /// piccolo strato C `native/gt.cpp` e lo collega staticamente.
 /// OpenSSL viene compilato da `openssl-src`; Boost (solo header) si prende da
-/// `GRABBIT_BOOST_ROOT` oppure dal sistema.
+/// `DROPALL_BOOST_ROOT` oppure dal sistema.
 #[cfg(feature = "torrent")]
 mod torrent {
     use std::path::{Path, PathBuf};
@@ -49,16 +49,16 @@ mod torrent {
     }
 
     /// Trova gli header di Boost. `Some(cartella)` = da passare a CMake come
-    /// GRABBIT_BOOST_ROOT; `None` = si usa il Boost di sistema.
+    /// DROPALL_BOOST_ROOT; `None` = si usa il Boost di sistema.
     fn ensure_boost(out_dir: &Path) -> Option<PathBuf> {
-        if let Ok(v) = std::env::var("GRABBIT_BOOST_ROOT") {
+        if let Ok(v) = std::env::var("DROPALL_BOOST_ROOT") {
             if !v.is_empty() {
                 let p = PathBuf::from(&v);
                 if has_boost(&p) {
                     return Some(p);
                 }
                 println!(
-                    "cargo:warning=GRABBIT_BOOST_ROOT={v} has no boost/version.hpp, ignoring it"
+                    "cargo:warning=DROPALL_BOOST_ROOT={v} has no boost/version.hpp, ignoring it"
                 );
             }
         }
@@ -76,11 +76,11 @@ mod torrent {
         if has_boost(&dest) {
             return Some(dest);
         }
-        let url = std::env::var("GRABBIT_BOOST_URL").unwrap_or_else(|_| BOOST_URL.to_string());
+        let url = std::env::var("DROPALL_BOOST_URL").unwrap_or_else(|_| BOOST_URL.to_string());
         println!("cargo:warning=Boost headers not found: downloading {url}");
         if let Err(e) = download_boost(&url, &dest) {
             panic!(
-                "Boost headers not found and the download failed ({e}). Set GRABBIT_BOOST_ROOT to a \
+                "Boost headers not found and the download failed ({e}). Set DROPALL_BOOST_ROOT to a \
                  folder containing `boost/`, install libboost-dev / `brew install boost`, or build \
                  without torrent support: cargo build --no-default-features"
             );
@@ -135,7 +135,7 @@ mod torrent {
         ] {
             println!("cargo:rerun-if-changed={p}");
         }
-        println!("cargo:rerun-if-env-changed=GRABBIT_BOOST_ROOT");
+        println!("cargo:rerun-if-env-changed=DROPALL_BOOST_ROOT");
 
         let target = std::env::var("TARGET").unwrap_or_default();
 
@@ -153,18 +153,18 @@ mod torrent {
             .define("OPENSSL_USE_STATIC_LIBS", "ON")
             .define("OPENSSL_INCLUDE_DIR", artifacts.include_dir())
             .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5")
-            .build_target("grabbit_gt");
+            .build_target("dropall_gt");
         if let Some(root) = &boost_root {
             cfg.env(
-                "GRABBIT_BOOST_ROOT",
+                "DROPALL_BOOST_ROOT",
                 root.to_string_lossy().replace('\\', "/"),
             );
         }
         let out = cfg.build();
 
         let build_dir = out.join("build");
-        let gt = find_lib(&build_dir, &["libgrabbit_gt.a", "grabbit_gt.lib"])
-            .expect("grabbit_gt non trovata");
+        let gt = find_lib(&build_dir, &["libdropall_gt.a", "dropall_gt.lib"])
+            .expect("dropall_gt non trovata");
         let lt = find_lib(
             &build_dir,
             &["libtorrent-rasterbar.a", "torrent-rasterbar.lib"],
@@ -176,7 +176,7 @@ mod torrent {
                 lib.parent().unwrap().display()
             );
         }
-        println!("cargo:rustc-link-lib=static=grabbit_gt");
+        println!("cargo:rustc-link-lib=static=dropall_gt");
         println!("cargo:rustc-link-lib=static=torrent-rasterbar");
         println!(
             "cargo:rustc-link-search=native={}",

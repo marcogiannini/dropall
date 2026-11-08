@@ -1,6 +1,6 @@
 name: Release
 
-# Compila Grabbit per Windows, Linux (AppImage) e macOS e, se richiesto,
+# Compila Dropall per Windows, Linux (AppImage) e macOS e, se richiesto,
 # pubblica una release GitHub con tutti i file.
 #
 # Tre modi per usarlo (dettagli nel README, sezione "Creare una release"):
@@ -27,7 +27,7 @@ permissions:
 env:
   # il repository da cui si compila diventa quello in cui l'app cerca gli aggiornamenti:
   # non serve più sostituire OWNER in Cargo.toml
-  GRABBIT_REPO: ${{ github.repository }}
+  DROPALL_REPO: ${{ github.repository }}
 
 concurrency:
   group: release-${{ github.ref }}
@@ -102,7 +102,7 @@ jobs:
       - run: cargo build --release
       - name: Rinomina l'eseguibile
         shell: bash
-        run: cp target/release/grabbit.exe grabbit-windows-x86_64.exe
+        run: cp target/release/dropall.exe dropall-windows-x86_64.exe
       # installer (Inno Setup): installa per l'utente corrente, quindi l'app può aggiornarsi da sola
       - name: Crea l'installer
         shell: pwsh
@@ -116,15 +116,15 @@ jobs:
               Where-Object { Test-Path $_ } | Select-Object -First 1
           }
           if (-not $iscc) { Write-Error "ISCC.exe non trovato"; exit 1 }
-          & $iscc "/DAppVersion=$env:VERSION" "/DSourceExe=$PWD\grabbit-windows-x86_64.exe" "/O$PWD" packaging\windows\grabbit.iss
+          & $iscc "/DAppVersion=$env:VERSION" "/DSourceExe=$PWD\dropall-windows-x86_64.exe" "/O$PWD" packaging\windows\dropall.iss
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          if (-not (Test-Path Grabbit-Setup-windows-x86_64.exe)) { Write-Error "installer non creato"; exit 1 }
+          if (-not (Test-Path Dropall-Setup-windows-x86_64.exe)) { Write-Error "installer non creato"; exit 1 }
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: |
-            grabbit-windows-x86_64.exe
-            Grabbit-Setup-windows-x86_64.exe
+            dropall-windows-x86_64.exe
+            Dropall-Setup-windows-x86_64.exe
           if-no-files-found: error
 
   linux:
@@ -144,7 +144,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: linux-x86_64
-          path: target/appimage/grabbit-linux-x86_64.AppImage
+          path: target/appimage/dropall-linux-x86_64.AppImage
 
   # Linux ARM (es. Raspberry Pi): facoltativo. I runner ARM gratuiti esistono solo
   # per repository pubblici; se manca o fallisce, la release esce comunque.
@@ -165,7 +165,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: linux-aarch64
-          path: target/appimage/grabbit-linux-aarch64.AppImage
+          path: target/appimage/dropall-linux-aarch64.AppImage
 
   macos:
     needs: prepare
@@ -189,25 +189,25 @@ jobs:
           mkdir -p dist
           for pair in "aarch64:aarch64-apple-darwin" "x86_64:x86_64-apple-darwin"; do
             ARCH=${pair%%:*}; TARGET=${pair##*:}
-            BIN=target/$TARGET/release/grabbit
+            BIN=target/$TARGET/release/dropall
             # binario nudo: lo scarica l'aggiornamento automatico
-            cp "$BIN" "dist/grabbit-macos-$ARCH"
+            cp "$BIN" "dist/dropall-macos-$ARCH"
             # pacchetto .app: per la prima installazione.
             # NON si firma il pacchetto: l'aggiornamento automatico sostituisce il
             # binario e invaliderebbe la firma (macOS poi terminerebbe l'app).
-            APP="Grabbit.app"; rm -rf "$APP"
+            APP="Dropall.app"; rm -rf "$APP"
             mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-            cp "$BIN" "$APP/Contents/MacOS/grabbit"
+            cp "$BIN" "$APP/Contents/MacOS/dropall"
             cp assets/icon.icns "$APP/Contents/Resources/icon.icns"
             cp LICENSE THIRD_PARTY_LICENSES.txt "$APP/Contents/Resources/"
             cat > "$APP/Contents/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict>
-            <key>CFBundleName</key><string>Grabbit</string>
-            <key>CFBundleDisplayName</key><string>Grabbit</string>
-            <key>CFBundleIdentifier</key><string>org.grabbit.Grabbit</string>
-            <key>CFBundleExecutable</key><string>grabbit</string>
+            <key>CFBundleName</key><string>Dropall</string>
+            <key>CFBundleDisplayName</key><string>Dropall</string>
+            <key>CFBundleIdentifier</key><string>org.dropall.Dropall</string>
+            <key>CFBundleExecutable</key><string>dropall</string>
             <key>CFBundleIconFile</key><string>icon</string>
             <key>CFBundleVersion</key><string>$VERSION</string>
             <key>CFBundleShortVersionString</key><string>$VERSION</string>
@@ -215,7 +215,7 @@ jobs:
             <key>NSHighResolutionCapable</key><true/>
           </dict></plist>
           PLIST
-            ditto -c -k --keepParent "$APP" "dist/Grabbit-macos-$ARCH.app.zip"
+            ditto -c -k --keepParent "$APP" "dist/Dropall-macos-$ARCH.app.zip"
           done
       - uses: actions/upload-artifact@v4
         with:
@@ -245,7 +245,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.ref }}
-          name: Grabbit ${{ needs.prepare.outputs.version }}
+          name: Dropall ${{ needs.prepare.outputs.version }}
           files: release/*
           fail_on_unmatched_files: true
           # fixed text from the file above; GitHub adds the automatic change list below it

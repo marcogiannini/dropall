@@ -42,17 +42,17 @@ mod imp {
 
     impl ksni::Tray for SniTray {
         fn id(&self) -> String {
-            "grabbit".into()
+            "dropall".into()
         }
         fn title(&self) -> String {
-            "Grabbit".into()
+            "Dropall".into()
         }
         fn icon_pixmap(&self) -> Vec<ksni::Icon> {
             self.icon.clone()
         }
         fn tool_tip(&self) -> ksni::ToolTip {
             ksni::ToolTip {
-                title: "Grabbit".into(),
+                title: "Dropall".into(),
                 description: if self.busy {
                     tr!("Download in corso", "Downloading").into()
                 } else {
@@ -68,7 +68,7 @@ mod imp {
             use ksni::menu::StandardItem;
             vec![
                 StandardItem {
-                    label: tr!("Mostra Grabbit", "Show Grabbit").into(),
+                    label: tr!("Mostra Dropall", "Show Dropall").into(),
                     activate: Box::new(|t: &mut SniTray| t.send(TrayEvent::Show)),
                     ..Default::default()
                 }
@@ -145,7 +145,7 @@ mod imp {
             let (tx, rx) = channel::<TrayEvent>();
             let (rgba, w, h) = icon_rgba(64)?;
             let icon = Icon::from_rgba(rgba, w, h).ok()?;
-            let show = MenuItem::new(tr!("Mostra Grabbit", "Show Grabbit"), true, None);
+            let show = MenuItem::new(tr!("Mostra Dropall", "Show Dropall"), true, None);
             let quit = MenuItem::new(tr!("Esci", "Quit"), true, None);
             let menu = Menu::new();
             menu.append_items(&[&show, &quit]).ok()?;
@@ -176,7 +176,7 @@ mod imp {
             let icon = TrayIconBuilder::new()
                 .with_menu(Box::new(menu))
                 .with_menu_on_left_click(false)
-                .with_tooltip("Grabbit")
+                .with_tooltip("Dropall")
                 .with_icon(icon)
                 .build()
                 .ok()?;
@@ -184,9 +184,9 @@ mod imp {
         }
         pub fn set_status(&mut self, busy: bool) {
             let t = if busy {
-                tr!("Grabbit — download in corso", "Grabbit — downloading")
+                tr!("Dropall — download in corso", "Dropall — downloading")
             } else {
-                "Grabbit"
+                "Dropall"
             };
             let _ = self.icon.set_tooltip(Some(t));
         }

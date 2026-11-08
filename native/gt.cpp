@@ -1,4 +1,4 @@
-// Thin C API over libtorrent used by Grabbit (see src/torrent.rs).
+// Thin C API over libtorrent used by Dropall (see src/torrent.rs).
 #include "gt.h"
 
 #include <libtorrent/add_torrent_params.hpp>
@@ -111,7 +111,7 @@ extern "C" {
 
 gt_session *gt_create(const char *state_dir, int listen_port, int test_mode) {
     lt::settings_pack p;
-    p.set_str(lt::settings_pack::user_agent, "Grabbit");
+    p.set_str(lt::settings_pack::user_agent, "Dropall");
     p.set_str(lt::settings_pack::peer_fingerprint, lt::generate_fingerprint("GB", 0, 1, 0, 0));
     if (listen_port <= 0) listen_port = 6881;
     {

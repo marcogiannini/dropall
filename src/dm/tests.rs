@@ -140,7 +140,7 @@ fn handle(
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("grabbit-dm-test-{}-{name}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("dropall-dm-test-{}-{name}", std::process::id()));
     let _ = fs::remove_dir_all(&d);
     fs::create_dir_all(&d).unwrap();
     d

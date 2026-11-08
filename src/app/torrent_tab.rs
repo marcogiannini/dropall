@@ -179,8 +179,8 @@ impl App {
             });
             ui.label(
                 RichText::new(tr!(
-                    "Puoi anche trascinare qui i file .torrent, oppure aprire un link magnet dal browser: Grabbit lo aggiunge da solo.",
-                    "You can also drag .torrent files here, or open a magnet link from your browser: Grabbit adds it by itself."
+                    "Puoi anche trascinare qui i file .torrent, oppure aprire un link magnet dal browser: Dropall lo aggiunge da solo.",
+                    "You can also drag .torrent files here, or open a magnet link from your browser: Dropall adds it by itself."
                 ))
                 .small()
                 .color(ui.visuals().weak_text_color()),

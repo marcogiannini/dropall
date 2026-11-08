@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genera le icone di Grabbit (PNG, ICO, ICNS) con Pillow.
+"""Genera le icone di Dropall (PNG, ICO, ICNS) con Pillow.
 
 Uso:  python3 scripts/make_icon.py
 Output: assets/icon.png  assets/icon.ico  assets/icon.icns
@@ -49,31 +49,52 @@ gloss = gloss.filter(ImageFilter.GaussianBlur(S * 0.006))
 gloss = ImageChops.multiply(gloss, Image.merge("RGBA", (mask, mask, mask, mask)))
 icon = Image.alpha_composite(icon, gloss)
 
-# --- simbolo: freccia di download la cui punta è un "play" -------------------
+# --- simbolo: tre elementi (file, musica, video) che "cadono" in un vassoio ---
 sym = Image.new("RGBA", (S, S), (0, 0, 0, 0))
 d = ImageDraw.Draw(sym)
 W = (255, 255, 255, 255)
-cx = S // 2
+SOFT = (255, 255, 255, 120)
 
-# gambo
-d.rounded_rectangle((cx - S * 0.075, S * 0.215, cx + S * 0.075, S * 0.52),
-                    radius=int(S * 0.04), fill=W)
-# punta: triangolo "play" ruotato verso il basso, con angoli stondati
-tri = [(cx - S * 0.225, S * 0.465), (cx + S * 0.225, S * 0.465), (cx, S * 0.715)]
-tmask = Image.new("L", (S, S), 0)
-ImageDraw.Draw(tmask).polygon(tri, fill=255)
-# blur + soglia = vertici arrotondati senza sporgenze
-tmask = tmask.filter(ImageFilter.GaussianBlur(S * 0.022)).point(
-    lambda v: 255 if v > 150 else 0).filter(ImageFilter.GaussianBlur(2))
-sym.paste(W, (0, 0), tmask)
+def streak(x, y0, y1, w=0.034):
+    """scia verticale semitrasparente: dà il senso della caduta"""
+    d.rounded_rectangle((x - S * w / 2, y0, x + S * w / 2, y1),
+                        radius=int(S * w / 2), fill=SOFT)
+
+def rounded_poly(points):
+    m = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(m).polygon(points, fill=255)
+    m = m.filter(ImageFilter.GaussianBlur(S * 0.02)).point(
+        lambda v: 255 if v > 150 else 0).filter(ImageFilter.GaussianBlur(2))
+    sym.paste(W, (0, 0), m)
+
+xs = (S * 0.275, S * 0.50, S * 0.725)
+# scie (altezze diverse: sembrano cadere in momenti diversi)
+streak(xs[0], S * 0.15, S * 0.28)
+streak(xs[1], S * 0.10, S * 0.22)
+streak(xs[2], S * 0.18, S * 0.31)
+# file: quadrato arrotondato con angolo piegato
+d.rounded_rectangle((xs[0] - S * 0.09, S * 0.35, xs[0] + S * 0.09, S * 0.55),
+                    radius=int(S * 0.03), fill=W)
+# musica: cerchio con foro (disco)
+d.ellipse((xs[1] - S * 0.10, S * 0.33, xs[1] + S * 0.10, S * 0.53), fill=W)
+# video: triangolo "play" con angoli stondati
+rounded_poly([(xs[2] - S * 0.07, S * 0.36), (xs[2] - S * 0.07, S * 0.56),
+              (xs[2] + S * 0.105, S * 0.46)])
+# fori/dettagli in colore di sfondo (ritaglio trasparente)
+cut = Image.new("L", (S, S), 255)
+cd = ImageDraw.Draw(cut)
+cd.ellipse((xs[1] - S * 0.03, S * 0.40, xs[1] + S * 0.03, S * 0.46), fill=0)
+cd.polygon([(xs[0] + S * 0.035, S * 0.35), (xs[0] + S * 0.09, S * 0.35),
+            (xs[0] + S * 0.09, S * 0.405)], fill=0)
+sym.putalpha(ImageChops.multiply(sym.split()[3], cut))
 d = ImageDraw.Draw(sym)
-# vassoio
-d.rounded_rectangle((S * 0.255, S * 0.735, S * 0.745, S * 0.80),
-                    radius=int(S * 0.032), fill=W)
-d.rounded_rectangle((S * 0.255, S * 0.675, S * 0.315, S * 0.80),
-                    radius=int(S * 0.030), fill=W)
-d.rounded_rectangle((S * 0.685, S * 0.675, S * 0.745, S * 0.80),
-                    radius=int(S * 0.030), fill=W)
+# vassoio a "U" ampio
+d.rounded_rectangle((S * 0.19, S * 0.67, S * 0.81, S * 0.755),
+                    radius=int(S * 0.042), fill=W)
+d.rounded_rectangle((S * 0.19, S * 0.58, S * 0.265, S * 0.755),
+                    radius=int(S * 0.038), fill=W)
+d.rounded_rectangle((S * 0.735, S * 0.58, S * 0.81, S * 0.755),
+                    radius=int(S * 0.038), fill=W)
 
 # ombra morbida sotto il simbolo
 shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0))

@@ -47,7 +47,7 @@ fn main() -> eframe::Result {
     };
 
     let mut viewport = eframe::egui::ViewportBuilder::default()
-        .with_title("Grabbit")
+        .with_title("Dropall")
         .with_inner_size([780.0, 780.0])
         .with_min_inner_size([640.0, 560.0]);
     if let Some(icon) = window_icon() {
@@ -58,7 +58,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "Grabbit",
+        "Dropall",
         options,
         Box::new(move |cc| {
             *repaint.lock().unwrap() = Some(cc.egui_ctx.clone());

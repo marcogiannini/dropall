@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Aggiornamento automatico di Grabbit stesso.
+//! Aggiornamento automatico di Dropall stesso.
 //!
 //! Legge l'ultima release del repository indicato in `Cargo.toml`
 //! (campo `repository`) e, se la versione è più recente, scarica il file
 //! giusto per la piattaforma e sostituisce l'eseguibile in uso.
 //!
 //! Nomi dei file che devi allegare a ogni release GitHub:
-//!   • Windows : grabbit-windows-x86_64.exe
-//!   • Linux   : grabbit-linux-x86_64.AppImage   (e -aarch64)
-//!   • macOS   : grabbit-macos-aarch64 / grabbit-macos-x86_64  (binario nudo)
+//!   • Windows : dropall-windows-x86_64.exe
+//!   • Linux   : dropall-linux-x86_64.AppImage   (e -aarch64)
+//!   • macOS   : dropall-macos-aarch64 / dropall-macos-x86_64  (binario nudo)
 use crate::tr;
 use crate::{net, tools};
 use anyhow::{anyhow, Result};
@@ -41,10 +41,10 @@ fn repo_from_url(url: &str) -> Option<String> {
 }
 
 /// Repository GitHub in cui cercare le release. Nelle build di GitHub è quello stesso
-/// repository (variabile GRABBIT_REPO impostata dal workflow); altrimenti vale il campo
+/// repository (variabile DROPALL_REPO impostata dal workflow); altrimenti vale il campo
 /// `repository` di Cargo.toml.
 pub fn repository() -> Option<String> {
-    if let Some(r) = option_env!("GRABBIT_REPO") {
+    if let Some(r) = option_env!("DROPALL_REPO") {
         let r = r.trim();
         if r.contains('/') && !r.starts_with("OWNER/") {
             return Some(r.to_string());
@@ -53,11 +53,11 @@ pub fn repository() -> Option<String> {
     repo_from_url(env!("CARGO_PKG_REPOSITORY"))
 }
 
-/// Indirizzo dell'API di GitHub. Nelle build di sviluppo si può sostituire (GRABBIT_API_BASE)
+/// Indirizzo dell'API di GitHub. Nelle build di sviluppo si può sostituire (DROPALL_API_BASE)
 /// per provare l'aggiornamento con un finto server; nelle release questa possibilità non esiste.
 fn api_base() -> String {
     if cfg!(debug_assertions) {
-        if let Ok(v) = std::env::var("GRABBIT_API_BASE") {
+        if let Ok(v) = std::env::var("DROPALL_API_BASE") {
             return v.trim_end_matches('/').to_string();
         }
     }
@@ -67,9 +67,9 @@ fn api_base() -> String {
 pub fn asset_name() -> Option<String> {
     let arch = std::env::consts::ARCH; // x86_64 | aarch64
     Some(match std::env::consts::OS {
-        "windows" => format!("grabbit-windows-{arch}.exe"),
-        "linux" => format!("grabbit-linux-{arch}.AppImage"),
-        "macos" => format!("grabbit-macos-{arch}"),
+        "windows" => format!("dropall-windows-{arch}.exe"),
+        "linux" => format!("dropall-linux-{arch}.AppImage"),
+        "macos" => format!("dropall-macos-{arch}"),
         _ => return None,
     })
 }
@@ -221,8 +221,8 @@ pub fn apply(rel: &Release, status: &mut dyn FnMut(String)) -> Result<()> {
     net::download(url, &tmp, &mut |d, t| {
         let p = t.filter(|t| *t > 0).map(|t| d * 100 / t).unwrap_or(0);
         status(tr!(
-            format!("Scarico Grabbit {}… {p}%", rel.version),
-            format!("Downloading Grabbit {}… {p}%", rel.version)
+            format!("Scarico Dropall {}… {p}%", rel.version),
+            format!("Downloading Dropall {}… {p}%", rel.version)
         ));
     })?;
     make_executable(&tmp)?;
@@ -304,7 +304,7 @@ mod tests {
             !c.contains('#') && !c.contains("**") && !c.contains('`'),
             "{c}"
         );
-        assert!(c.starts_with("Grabbit — universal downloader"), "{c}");
+        assert!(c.starts_with("Dropall — universal downloader"), "{c}");
         assert!(c.contains("- Download manager"), "{c}");
         assert!(!c.contains("\n\n\n"));
     }
@@ -345,18 +345,18 @@ mod tests {
 
     #[test]
     fn repository_from_url() {
-        assert_eq!(repo_from_url("https://github.com/OWNER/grabbit"), None); // segnaposto
+        assert_eq!(repo_from_url("https://github.com/OWNER/dropall"), None); // segnaposto
         assert_eq!(
-            repo_from_url("https://github.com/mario/grabbit"),
-            Some("mario/grabbit".into())
+            repo_from_url("https://github.com/mario/dropall"),
+            Some("mario/dropall".into())
         );
         assert_eq!(
-            repo_from_url("https://github.com/mario/grabbit.git"),
-            Some("mario/grabbit".into())
+            repo_from_url("https://github.com/mario/dropall.git"),
+            Some("mario/dropall".into())
         );
         assert_eq!(
-            repo_from_url("https://github.com/mario/grabbit/"),
-            Some("mario/grabbit".into())
+            repo_from_url("https://github.com/mario/dropall/"),
+            Some("mario/dropall".into())
         );
         assert_eq!(repo_from_url("https://example.org/x"), None);
         assert_eq!(repo_from_url(""), None);
@@ -371,19 +371,19 @@ mod tests {
         assert_eq!(status_code(&anyhow::anyhow!("altro")), None);
     }
 
-    /// GRABBIT_TEST_ASSET_URL=http://127.0.0.1:8767/grabbit-linux-x86_64.AppImage cargo test apply_ -- --ignored
+    /// DROPALL_TEST_ASSET_URL=http://127.0.0.1:8767/dropall-linux-x86_64.AppImage cargo test apply_ -- --ignored
     #[cfg(target_os = "linux")]
     #[test]
     #[ignore]
     fn apply_replaces_appimage() {
         use std::os::unix::fs::PermissionsExt;
-        let Ok(url) = std::env::var("GRABBIT_TEST_ASSET_URL") else {
+        let Ok(url) = std::env::var("DROPALL_TEST_ASSET_URL") else {
             return;
         };
-        let dir = std::env::temp_dir().join(format!("grabbit-upd-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("dropall-upd-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        let fake = dir.join("Grabbit.AppImage");
+        let fake = dir.join("Dropall.AppImage");
         fs::write(&fake, b"VECCHIA").unwrap();
         std::env::set_var("APPIMAGE", &fake);
         let rel = Release {
@@ -400,7 +400,7 @@ mod tests {
             0o111
         );
         assert!(
-            !dir.join("Grabbit.new").exists(),
+            !dir.join("Dropall.new").exists(),
             "file temporaneo lasciato in giro"
         );
         assert!(!msgs.is_empty());

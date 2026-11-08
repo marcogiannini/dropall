@@ -1,4 +1,4 @@
-# Grabbit
+# Dropall
 
 **Downloader universale**
 
@@ -15,7 +15,7 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
   indirizzi di file `.torrent`, apri file `.torrent` dal tuo computer, oppure clicca un link magnet nel browser.
 - **Area di notifica (tray)**: riduci a icona e i download continuano.
 - **Percentuale** accanto a ogni barra di avanzamento e interfaccia più chiara, a tre schede.
-- **Installer per Windows** (`Grabbit-Setup-windows-x86_64.exe`): installa solo per il tuo utente, senza permessi di
+- **Installer per Windows** (`Dropall-Setup-windows-x86_64.exe`): installa solo per il tuo utente, senza permessi di
   amministratore, con voce nel menu Start e disinstallatore; l'app continua ad aggiornarsi da sola. Resta anche l'`.exe` portatile.
 - **Download manager**, in una scheda a parte: file da qualsiasi link `http(s)` con fino a 16 connessioni
   ciascuno, code scaricate una dopo l'altra, un pianificatore che avvia e ferma ogni coda da sola
@@ -40,15 +40,15 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
 - **Torrent** (scheda separata), tre modi per aggiungerli:
   - incolla **link magnet** o indirizzi di file `.torrent` (uno per riga; anche la scheda File li gira qui);
   - **apri file `.torrent`** dal computer: pulsante *Apri file .torrent…*, trascinamento sulla finestra, oppure
-    "Apri con" / doppio clic quando Grabbit è l'app predefinita;
-  - clicca un **link magnet nel browser**: Grabbit si avvia, o passa in primo piano se è già aperto
+    "Apri con" / doppio clic quando Dropall è l'app predefinita;
+  - clicca un **link magnet nel browser**: Dropall si avvia, o passa in primo piano se è già aperto
     (istanza unica), e aggiunge il torrent.
   I torrent riprendono dopo il riavvio, puoi scegliere di continuare a condividere dopo il download, limitare
   l'upload (il limite di download è quello condiviso della scheda File) ed eliminare un torrent con o senza i file.
-  L'installer di Windows propone di registrare Grabbit per i link `magnet:` e i file `.torrent` (solo utente corrente);
+  L'installer di Windows propone di registrare Dropall per i link `magnet:` e i file `.torrent` (solo utente corrente);
   su Linux la voce del menu li dichiara. **macOS**: non ancora registrato come gestore: usa incolla, il pulsante di
   apertura o il trascinamento.
-- **Area di notifica (tray)**: con l'opzione in fondo alla finestra (attiva di default) minimizzando Grabbit si
+- **Area di notifica (tray)**: con l'opzione in fondo alla finestra (attiva di default) minimizzando Dropall si
   nasconde nell'area di notifica e video, file e torrent continuano a scaricare; chiudendo la finestra mentre si
   scarica succede lo stesso. Clic sull'icona per riaprirla; il menu ha *Mostra* ed *Esci*.
   Su Linux usa lo standard StatusNotifierItem (KDE, Xfce, Cinnamon, e GNOME con l'estensione AppIndicator);
@@ -77,11 +77,11 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
 
 - Accelera i download solo se il **server accetta più connessioni** e il suo limite è per
   connessione. Se il server ti dà già tutta la velocità della tua linea, o non supporta gli
-  intervalli, non andrai più veloce (Grabbit usa allora una sola connessione e lo scrive). Il
+  intervalli, non andrai più veloce (Dropall usa allora una sola connessione e lo scrive). Il
   «fino al 500 %» che alcuni programmi dichiarano è un caso migliore, non una promessa.
 - Alcuni siti rifiutano molte connessioni insieme o chiedono un accesso: usa meno connessioni.
   I link che richiedono cookie o login non sono supportati.
-- Il pianificatore funziona con Grabbit **aperto**: se l'app è chiusa all'orario previsto non
+- Il pianificatore funziona con Dropall **aperto**: se l'app è chiusa all'orario previsto non
   parte nulla. Se la apri quando l'orario è già dentro l'intervallo, la coda parte subito.
 - Usalo solo per file che hai il diritto di scaricare.
 
@@ -92,34 +92,34 @@ L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsi
   scaricare e condividere.
 - Per trovare i peer serve la rete: un link magnet cerca prima le informazioni del torrent tramite tracker e DHT,
   e può richiedere un po'. Lo stato mostra *Ricerca informazioni* finché non le trova.
-- La prima volta firewall o router possono chiedere di Grabbit; usa la porta 6881 e prova UPnP/NAT-PMP.
+- La prima volta firewall o router possono chiedere di Dropall; usa la porta 6881 e prova UPnP/NAT-PMP.
 
 ### Come funziona Spotify
 
-Spotify cifra l'audio (DRM) e yt-dlp non lo scarica. Grabbit legge soltanto i
+Spotify cifra l'audio (DRM) e yt-dlp non lo scarica. Dropall legge soltanto i
 **dati pubblici** del link (titolo e artista di brano, album o playlist), poi
 **cerca lo stesso brano su YouTube** e scarica l'audio da lì. Quindi:
 
 - il risultato è l'audio della versione YouTube, non il file originale Spotify;
 - una playlist può mostrare al massimo circa 100 brani;
 - se Spotify cambia la struttura delle sue pagine pubbliche, la lettura dei link
-  può smettere di funzionare finché non si aggiorna Grabbit.
+  può smettere di funzionare finché non si aggiorna Dropall.
 
-> Usa Grabbit solo per contenuti che hai il diritto di scaricare e nel rispetto
+> Usa Dropall solo per contenuti che hai il diritto di scaricare e nel rispetto
 > del copyright e dei termini di servizio delle piattaforme.
 
 ## Installazione
 
 | Sistema | File dalla pagina *Releases* | Note |
 |---|---|---|
-| Windows (installer) | `Grabbit-Setup-windows-x86_64.exe` | **consigliato**: installa solo per il tuo utente (nessun permesso di amministratore), aggiunge la voce nel menu Start e un disinstallatore, icona sul desktop facoltativa; poi l'app si aggiorna da sola. SmartScreen può avvisare perché non è firmato |
-| Windows (portatile) | `grabbit-windows-x86_64.exe` | senza installazione: doppio clic e via |
-| Linux | `grabbit-linux-x86_64.AppImage` | `chmod +x` e doppio clic (l'auto-aggiornamento funziona solo da AppImage) |
-| macOS | `Grabbit-macos-aarch64.app.zip` (Apple Silicon) oppure `…-x86_64.app.zip` (Intel) | decomprimi, trascina in *Applicazioni*; la prima volta tasto destro → Apri (l'app non è notarizzata). Se macOS la dichiara «danneggiata»: `xattr -cr /Applications/Grabbit.app` |
+| Windows (installer) | `Dropall-Setup-windows-x86_64.exe` | **consigliato**: installa solo per il tuo utente (nessun permesso di amministratore), aggiunge la voce nel menu Start e un disinstallatore, icona sul desktop facoltativa; poi l'app si aggiorna da sola. SmartScreen può avvisare perché non è firmato |
+| Windows (portatile) | `dropall-windows-x86_64.exe` | senza installazione: doppio clic e via |
+| Linux | `dropall-linux-x86_64.AppImage` | `chmod +x` e doppio clic (l'auto-aggiornamento funziona solo da AppImage) |
+| macOS | `Dropall-macos-aarch64.app.zip` (Apple Silicon) oppure `…-x86_64.app.zip` (Intel) | decomprimi, trascina in *Applicazioni*; la prima volta tasto destro → Apri (l'app non è notarizzata). Se macOS la dichiara «danneggiata»: `xattr -cr /Applications/Dropall.app` |
 
 Dati e strumenti scaricati stanno in:
-Windows `%APPDATA%\Grabbit\Grabbit\data`, Linux `~/.local/share/grabbit`,
-macOS `~/Library/Application Support/org.Grabbit.Grabbit`.
+Windows `%APPDATA%\Dropall\Dropall\data`, Linux `~/.local/share/dropall`,
+macOS `~/Library/Application Support/org.Dropall.Dropall`.
 
 ## Creare una release
 
@@ -165,12 +165,12 @@ Una versione già usata non si può ripubblicare: scegline una più alta.
 
 | File | A cosa serve |
 |---|---|
-| `Grabbit-Setup-windows-x86_64.exe` | installer Windows (nuove installazioni) |
-| `grabbit-windows-x86_64.exe` | Windows portatile, usato anche dagli aggiornamenti automatici |
-| `grabbit-linux-x86_64.AppImage` | Linux Intel/AMD |
-| `grabbit-linux-aarch64.AppImage` | Linux ARM (solo se il repository è pubblico) |
-| `Grabbit-macos-aarch64.app.zip` / `Grabbit-macos-x86_64.app.zip` | macOS, prima installazione |
-| `grabbit-macos-aarch64` / `grabbit-macos-x86_64` | macOS, usati dall'aggiornamento automatico |
+| `Dropall-Setup-windows-x86_64.exe` | installer Windows (nuove installazioni) |
+| `dropall-windows-x86_64.exe` | Windows portatile, usato anche dagli aggiornamenti automatici |
+| `dropall-linux-x86_64.AppImage` | Linux Intel/AMD |
+| `dropall-linux-aarch64.AppImage` | Linux ARM (solo se il repository è pubblico) |
+| `Dropall-macos-aarch64.app.zip` / `Dropall-macos-x86_64.app.zip` | macOS, prima installazione |
+| `dropall-macos-aarch64` / `dropall-macos-x86_64` | macOS, usati dall'aggiornamento automatico |
 
 ### Se qualcosa va storto
 
@@ -190,7 +190,7 @@ Una versione già usata non si può ripubblicare: scegline una più alta.
 
 ## Accessibilità
 
-Grabbit rende la sua interfaccia disponibile agli screen reader tramite
+Dropall rende la sua interfaccia disponibile agli screen reader tramite
 [AccessKit](https://github.com/AccessKit/accesskit): Narrator e NVDA su Windows,
 VoiceOver su macOS, Orca su Linux. Pulsanti, campi, elenchi e barre di avanzamento hanno nome
 e ruolo, il campo del link ha un'etichetta, lo stato dei download è detto anche a parole
@@ -202,8 +202,8 @@ apri una segnalazione.
 ## Compilare in locale su Windows
 
 Con Rust installato (<https://rustup.rs>) fai doppio clic su `packaging\windows\build.bat`:
-crea `grabbit-windows-x86_64.exe` e, se è installato [Inno Setup 6](https://jrsoftware.org/isinfo.php), anche
-l'installer `Grabbit-Setup-windows-x86_64.exe`.
+crea `dropall-windows-x86_64.exe` e, se è installato [Inno Setup 6](https://jrsoftware.org/isinfo.php), anche
+l'installer `Dropall-Setup-windows-x86_64.exe`.
 
 ## Compilare da sorgente
 
@@ -216,18 +216,18 @@ python3 scripts/make_icon.py             # rigenera le icone (serve Pillow)
 
 Serve Rust 1.85+. Servono anche **CMake**, un compilatore C++17 e gli header di **Boost** (il motore torrent,
 libtorrent, viene compilato dentro il programma; OpenSSL lo compila da sorgente il crate `openssl-src`, che richiede
-`perl` e `make`: non serve OpenSSL di sistema). Imposta `GRABBIT_BOOST_ROOT` su una cartella che contiene `boost/`,
+`perl` e `make`: non serve OpenSSL di sistema). Imposta `DROPALL_BOOST_ROOT` su una cartella che contiene `boost/`,
 oppure installa il pacchetto di sistema (`libboost-dev`, `brew install boost`). Su Windows usa il prompt
 *x64 Native Tools* (MSVC) e i sorgenti di Boost. Per compilare senza torrent (senza CMake/Boost):
-`cargo build --release --no-default-features`. Se Boost non si trova, lo script di build scarica gli header da solo (serve internet; con `GRABBIT_BOOST_URL` si indica un mirror).
+`cargo build --release --no-default-features`. Se Boost non si trova, lo script di build scarica gli header da solo (serve internet; con `DROPALL_BOOST_URL` si indica un mirror).
 
 Prove con yt-dlp reale (facoltative):
 
 ```bash
-GRABBIT_YTDLP=/percorso/yt-dlp cargo test -- --ignored
+DROPALL_YTDLP=/percorso/yt-dlp cargo test -- --ignored
 ```
 
-Per forzare la lingua dell'interfaccia (prove): `GRABBIT_LANG=it` oppure `GRABBIT_LANG=en`.
+Per forzare la lingua dell'interfaccia (prove): `DROPALL_LANG=it` oppure `DROPALL_LANG=en`.
 
 ## Struttura
 
@@ -252,10 +252,10 @@ Per forzare la lingua dell'interfaccia (prove): `GRABBIT_LANG=it` oppure `GRABBI
 ## Problemi comuni
 
 - **L'aggiornamento automatico non parte**: leggi la riga di stato in fondo alla finestra.
-  Dice se Grabbit è già aggiornato, se non c'è nessuna release (o il repository è privato:
+  Dice se Dropall è già aggiornato, se non c'è nessuna release (o il repository è privato:
   l'app non può leggerlo, serve un repository pubblico), se GitHub ha limitato le richieste,
   o se la release non contiene il file per il tuo sistema. Il pulsante *Controlla
-  aggiornamenti di Grabbit* nelle opzioni avanzate rifà il controllo subito. Dopo un
+  aggiornamenti di Dropall* nelle opzioni avanzate rifà il controllo subito. Dopo un
   aggiornamento l'app si riavvia una volta sola e non si aggiorna di nuovo in quella
   esecuzione, per evitare cicli.
 
@@ -268,7 +268,7 @@ Per forzare la lingua dell'interfaccia (prove): `GRABBIT_LANG=it` oppure `GRABBI
 
 ## Licenza
 
-Grabbit è software libero, rilasciato con la
+Dropall è software libero, rilasciato con la
 [Licenza Pubblica Generica GNU v3.0 o successive](https://www.gnu.org/licenses/gpl-3.0.html)
 (`GPL-3.0-or-later`); vedi `LICENSE`. Puoi usarlo, studiarlo, condividerlo e modificarlo; se
 distribuisci versioni modificate, devi rilasciarle con la stessa licenza e con i sorgenti.

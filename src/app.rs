@@ -269,7 +269,7 @@ impl App {
         });
     }
 
-    /// Cerca una nuova versione di Grabbit su GitHub (in un thread a parte).
+    /// Cerca una nuova versione di Dropall su GitHub (in un thread a parte).
     fn start_update_check(&mut self, ctx: &egui::Context) {
         self.update_checking = true;
         self.update_status = tr!("Controllo aggiornamenti…", "Checking for updates…").into();
@@ -373,7 +373,7 @@ impl App {
                             format!("No release found on GitHub ({repo}). If the repository is private, the app cannot read it.")
                         )
                     }
-                    Ok(Check::UpToDate) => tr!(format!("Grabbit {} è aggiornato", selfupdate::CURRENT), format!("Grabbit {} is up to date", selfupdate::CURRENT)),
+                    Ok(Check::UpToDate) => tr!(format!("Dropall {} è aggiornato", selfupdate::CURRENT), format!("Dropall {} is up to date", selfupdate::CURRENT)),
                     Ok(Check::Newer(rel)) => {
                         let msg = tr!(format!("Disponibile la versione {}", rel.version), format!("Version {} is available", rel.version));
                         if self.cfg.auto_update_app
@@ -601,9 +601,9 @@ impl App {
 
     fn header(&self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.add(egui::Image::new((self.logo.id(), egui::vec2(46.0, 46.0))).alt_text("Grabbit"));
+            ui.add(egui::Image::new((self.logo.id(), egui::vec2(46.0, 46.0))).alt_text("Dropall"));
             ui.vertical(|ui| {
-                ui.label(RichText::new("Grabbit").size(28.0).strong());
+                ui.label(RichText::new("Dropall").size(28.0).strong());
                 ui.label(
                     RichText::new(tr!("Downloader universale", "Universal downloader"))
                         .color(ui.visuals().weak_text_color()),
@@ -959,10 +959,10 @@ impl App {
                         });
                     ui.label(RichText::new(tr!("(oppure Ctrl + e Ctrl −)", "(or Ctrl + and Ctrl −)")).small().color(ui.visuals().weak_text_color()));
                 });
-                ui.checkbox(&mut self.cfg.auto_update_app, tr!("Installa automaticamente gli aggiornamenti di Grabbit", "Install Grabbit updates automatically"));
+                ui.checkbox(&mut self.cfg.auto_update_app, tr!("Installa automaticamente gli aggiornamenti di Dropall", "Install Dropall updates automatically"));
                 ui.horizontal(|ui| {
                     let can_check = !self.update_checking && !matches!(self.update, UpdateUi::Working(_));
-                    if ui.add_enabled(can_check, egui::Button::new(tr!("Controlla aggiornamenti di Grabbit", "Check for Grabbit updates"))).clicked() {
+                    if ui.add_enabled(can_check, egui::Button::new(tr!("Controlla aggiornamenti di Dropall", "Check for Dropall updates"))).clicked() {
                         self.auto_install = true;
                         self.start_update_check(ctx);
                     }
@@ -1107,7 +1107,7 @@ impl App {
         let ok = |b: bool| if b { "ok" } else { tr!("manca", "missing") };
         ui.label(
             RichText::new(format!(
-                "Grabbit {} · yt-dlp {} · ffmpeg {} · Deno {} · libtorrent {}",
+                "Dropall {} · yt-dlp {} · ffmpeg {} · Deno {} · libtorrent {}",
                 selfupdate::CURRENT,
                 yt,
                 ok(self.tools.ffmpeg.is_some()),

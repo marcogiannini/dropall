@@ -1,4 +1,4 @@
-# Grabbit
+# Dropall
 
 **Universal downloader**
 
@@ -15,7 +15,7 @@ The interface is in Italian if your system language is Italian, and in English o
   `.torrent` addresses, open `.torrent` files from your computer, or click a magnet link in your browser.
 - **System tray**: minimize to the notification area and downloads keep going.
 - **Percentage** next to every progress bar, and a clearer three-tab interface.
-- **Windows installer** (`Grabbit-Setup-windows-x86_64.exe`): installs for your user only, no administrator rights,
+- **Windows installer** (`Dropall-Setup-windows-x86_64.exe`): installs for your user only, no administrator rights,
   with a Start menu entry and an uninstaller; the app keeps updating itself. The portable `.exe` is still there.
 - **Download manager**, in its own tab: files from any `http(s)` link with up to 16 connections each,
   queues downloaded one after the other, a scheduler that starts and stops each queue by itself,
@@ -40,14 +40,14 @@ The interface is in Italian if your system language is Italian, and in English o
 - **Torrents** (separate tab), three ways to add them:
   - paste **magnet links** or addresses of `.torrent` files (one per line; the Files tab also forwards them here);
   - **open `.torrent` files** from your computer: *Open .torrent file…* button, drag and drop onto the window, or
-    "Open with" / double-click when Grabbit is the default app;
-  - click a **magnet link in your browser**: Grabbit starts, or is brought to the front if already running
+    "Open with" / double-click when Dropall is the default app;
+  - click a **magnet link in your browser**: Dropall starts, or is brought to the front if already running
     (single instance), and adds the torrent.
   Torrents resume after a restart (resume data is saved), you can choose to keep seeding after the download,
   limit the upload speed (the download limit is the shared one of the Files tab) and delete a torrent with or without its files.
-  The Windows installer offers to register Grabbit for `magnet:` links and `.torrent` files (current user only);
+  The Windows installer offers to register Dropall for `magnet:` links and `.torrent` files (current user only);
   on Linux the desktop entry declares them. **macOS**: not registered as a handler yet: use paste, the open button or drag and drop.
-- **System tray**: with the option at the bottom of the window (on by default) minimizing hides Grabbit in the
+- **System tray**: with the option at the bottom of the window (on by default) minimizing hides Dropall in the
   notification area and videos, files and torrents keep downloading; closing the window while something is downloading
   does the same. Click the icon to bring the window back; the menu has *Show* and *Quit*.
   On Linux the tray uses the StatusNotifierItem standard (KDE, Xfce, Cinnamon, and GNOME with the AppIndicator extension);
@@ -75,11 +75,11 @@ The interface is in Italian if your system language is Italian, and in English o
 
 - It speeds up downloads only when the **server allows several connections** and its limit is
   per connection. If the server already gives you your full line speed, or does not support
-  ranges, you will not go faster (Grabbit then uses one connection and says so). The "up to
+  ranges, you will not go faster (Dropall then uses one connection and says so). The "up to
   500 %" that some programs advertise is a best case, not a promise.
 - Some sites refuse many simultaneous connections or require a sign-in: use fewer connections.
   Links that need cookies or a login are not supported.
-- The scheduler works while Grabbit is **open**: if the app is closed at the scheduled time,
+- The scheduler works while Dropall is **open**: if the app is closed at the scheduled time,
   nothing starts. If it is opened when the time is already inside the window, the queue starts
   right away.
 - Use it only for files you have the right to download.
@@ -90,34 +90,34 @@ The interface is in Italian if your system language is Italian, and in English o
   computer uploads to others. Use the upload limit if needed, and only download content you have the right to download and share.
 - Finding peers needs a working network: magnet links first look for the torrent's info through trackers and the DHT,
   which can take a little. The status shows *Fetching info* until it is found.
-- The first time, your firewall or router may ask about Grabbit; Grabbit listens on port 6881 and tries UPnP/NAT-PMP.
+- The first time, your firewall or router may ask about Dropall; Dropall listens on port 6881 and tries UPnP/NAT-PMP.
 
 ### How Spotify works
 
-Spotify encrypts its audio (DRM) and yt-dlp cannot download it. Grabbit only reads the
+Spotify encrypts its audio (DRM) and yt-dlp cannot download it. Dropall only reads the
 **public data** of the link (title and artist of a track, album or playlist), then
 **searches for the same track on YouTube** and downloads the audio from there. So:
 
 - the result is the audio of the YouTube version, not the original Spotify file;
 - a playlist can show at most about 100 tracks;
 - if Spotify changes the structure of its public pages, reading links may stop
-  working until Grabbit is updated.
+  working until Dropall is updated.
 
-> Use Grabbit only for content you have the right to download and in compliance with
+> Use Dropall only for content you have the right to download and in compliance with
 > the copyright and terms of service of the platforms.
 
 ## Installation
 
 | System | File from the *Releases* page | Notes |
 |---|---|---|
-| Windows (installer) | `Grabbit-Setup-windows-x86_64.exe` | **recommended**: installs for your user only (no administrator rights), adds a Start menu entry and an uninstaller, optional desktop icon; the app updates itself afterwards. SmartScreen may warn because it is not signed |
-| Windows (portable) | `grabbit-windows-x86_64.exe` | no installation: double-click and go |
-| Linux | `grabbit-linux-x86_64.AppImage` | `chmod +x` and double-click (auto-update only works from the AppImage) |
-| macOS | `Grabbit-macos-aarch64.app.zip` (Apple Silicon) or `…-x86_64.app.zip` (Intel) | unzip, drag into *Applications*; the first time right-click → Open (the app is not notarized). If macOS calls it "damaged": `xattr -cr /Applications/Grabbit.app` |
+| Windows (installer) | `Dropall-Setup-windows-x86_64.exe` | **recommended**: installs for your user only (no administrator rights), adds a Start menu entry and an uninstaller, optional desktop icon; the app updates itself afterwards. SmartScreen may warn because it is not signed |
+| Windows (portable) | `dropall-windows-x86_64.exe` | no installation: double-click and go |
+| Linux | `dropall-linux-x86_64.AppImage` | `chmod +x` and double-click (auto-update only works from the AppImage) |
+| macOS | `Dropall-macos-aarch64.app.zip` (Apple Silicon) or `…-x86_64.app.zip` (Intel) | unzip, drag into *Applications*; the first time right-click → Open (the app is not notarized). If macOS calls it "damaged": `xattr -cr /Applications/Dropall.app` |
 
 Data and downloaded tools are stored in:
-Windows `%APPDATA%\Grabbit\Grabbit\data` (the installer puts the program in `%LOCALAPPDATA%\Programs\Grabbit`), Linux `~/.local/share/grabbit`,
-macOS `~/Library/Application Support/org.Grabbit.Grabbit`.
+Windows `%APPDATA%\Dropall\Dropall\data` (the installer puts the program in `%LOCALAPPDATA%\Programs\Dropall`), Linux `~/.local/share/dropall`,
+macOS `~/Library/Application Support/org.Dropall.Dropall`.
 
 ## Creating a release
 
@@ -163,12 +163,12 @@ A version that has already been used cannot be published again: pick a higher on
 
 | File | Purpose |
 |---|---|
-| `Grabbit-Setup-windows-x86_64.exe` | Windows installer (new installations) |
-| `grabbit-windows-x86_64.exe` | Windows portable, also used by automatic updates |
-| `grabbit-linux-x86_64.AppImage` | Linux Intel/AMD |
-| `grabbit-linux-aarch64.AppImage` | Linux ARM (only if the repository is public) |
-| `Grabbit-macos-aarch64.app.zip` / `Grabbit-macos-x86_64.app.zip` | macOS, first installation |
-| `grabbit-macos-aarch64` / `grabbit-macos-x86_64` | macOS, used by automatic updates |
+| `Dropall-Setup-windows-x86_64.exe` | Windows installer (new installations) |
+| `dropall-windows-x86_64.exe` | Windows portable, also used by automatic updates |
+| `dropall-linux-x86_64.AppImage` | Linux Intel/AMD |
+| `dropall-linux-aarch64.AppImage` | Linux ARM (only if the repository is public) |
+| `Dropall-macos-aarch64.app.zip` / `Dropall-macos-x86_64.app.zip` | macOS, first installation |
+| `dropall-macos-aarch64` / `dropall-macos-x86_64` | macOS, used by automatic updates |
 
 ### If something goes wrong
 
@@ -188,7 +188,7 @@ A version that has already been used cannot be published again: pick a higher on
 
 ## Accessibility
 
-Grabbit exposes its interface to screen readers through
+Dropall exposes its interface to screen readers through
 [AccessKit](https://github.com/AccessKit/accesskit): Narrator and NVDA on Windows,
 VoiceOver on macOS, Orca on Linux. Buttons, fields, lists and progress bars have names and
 roles, the link field is labelled, the download state is also spoken in words (waiting,
@@ -200,8 +200,8 @@ please open an issue.
 ## Building locally on Windows
 
 With Rust installed (<https://rustup.rs>) double-click `packaging\windows\build.bat`:
-it creates `grabbit-windows-x86_64.exe` and, if [Inno Setup 6](https://jrsoftware.org/isinfo.php) is installed,
-also the installer `Grabbit-Setup-windows-x86_64.exe`.
+it creates `dropall-windows-x86_64.exe` and, if [Inno Setup 6](https://jrsoftware.org/isinfo.php) is installed,
+also the installer `Dropall-Setup-windows-x86_64.exe`.
 
 ## Building from source
 
@@ -214,18 +214,18 @@ python3 scripts/make_icon.py             # regenerate the icons (needs Pillow)
 
 Requires Rust 1.85+, **CMake**, a C++17 compiler and the **Boost** headers (the torrent engine, libtorrent, is
 compiled in; OpenSSL is built from source by the `openssl-src` crate, which needs `perl` and `make`; no system
-OpenSSL needed). Point `GRABBIT_BOOST_ROOT` to a folder that contains `boost/`, or install the system package
+OpenSSL needed). Point `DROPALL_BOOST_ROOT` to a folder that contains `boost/`, or install the system package
 (`libboost-dev`, `brew install boost`). On Windows use the *x64 Native Tools* prompt (MSVC) and a Boost source tree.
 To build without torrent support (no CMake/Boost needed): `cargo build --release --no-default-features`.
-If no Boost is found, the build script downloads the headers by itself (needs internet; set `GRABBIT_BOOST_URL` to use a mirror).
+If no Boost is found, the build script downloads the headers by itself (needs internet; set `DROPALL_BOOST_URL` to use a mirror).
 
 Tests against a real yt-dlp (optional):
 
 ```bash
-GRABBIT_YTDLP=/path/to/yt-dlp cargo test -- --ignored
+DROPALL_YTDLP=/path/to/yt-dlp cargo test -- --ignored
 ```
 
-To force the interface language (for testing): `GRABBIT_LANG=it` or `GRABBIT_LANG=en`.
+To force the interface language (for testing): `DROPALL_LANG=it` or `DROPALL_LANG=en`.
 
 ## Structure
 
@@ -250,10 +250,10 @@ To force the interface language (for testing): `GRABBIT_LANG=it` or `GRABBIT_LAN
 ## Common problems
 
 - **Automatic update does not start**: read the status line at the bottom of the window.
-  It says whether Grabbit is already up to date, whether there is no release (or the repository
+  It says whether Dropall is already up to date, whether there is no release (or the repository
   is private: the app cannot read it, a public repository is needed), whether GitHub rate-limited
   the requests, or whether the release does not contain the file for your system. The *Check for
-  Grabbit updates* button in the advanced options repeats the check immediately. After an
+  Dropall updates* button in the advanced options repeats the check immediately. After an
   update the app restarts once and does not update again in that run, to avoid loops.
 - **"Sign in to confirm you're not a bot" / restricted videos**: in
   *Advanced options* choose the browser to take cookies from.
@@ -264,7 +264,7 @@ To force the interface language (for testing): `GRABBIT_LANG=it` or `GRABBIT_LAN
 
 ## License
 
-Grabbit is free software, released under the
+Dropall is free software, released under the
 [GNU General Public License v3.0 or later](https://www.gnu.org/licenses/gpl-3.0.html)
 (`GPL-3.0-or-later`); see `LICENSE`. You may use, study, share and modify it; if you
 distribute modified versions, they must be released under the same license with their source code.

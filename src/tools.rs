@@ -14,13 +14,13 @@ use std::process::Command;
 pub const EXE: &str = if cfg!(windows) { ".exe" } else { "" };
 
 pub fn project_dirs() -> Option<ProjectDirs> {
-    ProjectDirs::from("org", "Grabbit", "Grabbit")
+    ProjectDirs::from("org", "Dropall", "Dropall")
 }
 
 pub fn data_dir() -> PathBuf {
     project_dirs()
         .map(|d| d.data_dir().to_path_buf())
-        .unwrap_or_else(|| std::env::temp_dir().join("grabbit"))
+        .unwrap_or_else(|| std::env::temp_dir().join("dropall"))
 }
 
 pub fn bin_dir() -> PathBuf {
@@ -339,7 +339,7 @@ mod tests {
     use std::io::Write;
 
     fn tmpdir(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("grabbit-test-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("dropall-test-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d

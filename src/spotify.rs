@@ -2,7 +2,7 @@
 //! Supporto ai link Spotify.
 //!
 //! Spotify protegge l'audio con DRM e yt-dlp non lo scarica. Come fanno altri
-//! strumenti open source, Grabbit legge soltanto i **metadati pubblici**
+//! strumenti open source, Dropall legge soltanto i **metadati pubblici**
 //! (titolo e artista) dalla pagina "embed" di Spotify e poi cerca la
 //! corrispondenza su YouTube, da cui scarica l'audio. Nessun DRM viene aggirato.
 //!

@@ -312,7 +312,7 @@ fn build_args(job: &Job, cfg: &Config, tools: &Toolset) -> Vec<String> {
         Some(n) => format!("{n}.%(ext)s"),
         // Solo numero d'ordine (se è una playlist) e titolo. La cartella della playlist NON
         // si fa con il modello: yt-dlp trasforma ogni "/" dentro un valore in un carattere
-        // innocuo, quindi finirebbe tutto nel nome del file. La sceglie Grabbit (vedi
+        // innocuo, quindi finirebbe tutto nel nome del file. La sceglie Dropall (vedi
         // `probe_playlist_title`) e la passa a -P.
         None => "%(playlist_index&{} - |)s%(title).150B.%(ext)s".into(),
     });
@@ -753,19 +753,19 @@ mod tests {
 
     /// Playlist vera (feed RSS locale) con yt-dlp reale: cartella con il nome della playlist,
     /// file senza il nome della playlist.
-    /// GRABBIT_YTDLP=... GRABBIT_PLAYLIST_URL=http://127.0.0.1:8768/feed.rss GRABBIT_PLAYLIST_TITLE="Mix: Best/Of 2026" \
+    /// DROPALL_YTDLP=... DROPALL_PLAYLIST_URL=http://127.0.0.1:8768/feed.rss DROPALL_PLAYLIST_TITLE="Mix: Best/Of 2026" \
     ///   cargo test e2e_playlist -- --ignored --nocapture
     #[test]
     #[ignore]
     fn e2e_playlist_folder() {
         let (Ok(bin), Ok(url), Ok(title)) = (
-            std::env::var("GRABBIT_YTDLP"),
-            std::env::var("GRABBIT_PLAYLIST_URL"),
-            std::env::var("GRABBIT_PLAYLIST_TITLE"),
+            std::env::var("DROPALL_YTDLP"),
+            std::env::var("DROPALL_PLAYLIST_URL"),
+            std::env::var("DROPALL_PLAYLIST_TITLE"),
         ) else {
             return;
         };
-        let out = std::env::temp_dir().join("grabbit-e2e-playlist");
+        let out = std::env::temp_dir().join("dropall-e2e-playlist");
         let _ = std::fs::remove_dir_all(&out);
         let cfg = Config {
             mode: Mode::Video,
@@ -815,11 +815,11 @@ mod tests {
     }
 
     /// Verifica che un vero yt-dlp accetti tutte le combinazioni di opzioni.
-    /// Uso: GRABBIT_YTDLP=/percorso/yt-dlp cargo test -- --ignored
+    /// Uso: DROPALL_YTDLP=/percorso/yt-dlp cargo test -- --ignored
     #[test]
     #[ignore]
     fn real_ytdlp_accepts_all_args() {
-        let Ok(bin) = std::env::var("GRABBIT_YTDLP") else {
+        let Ok(bin) = std::env::var("DROPALL_YTDLP") else {
             return;
         };
         let mut configs = Vec::new();
@@ -860,18 +860,18 @@ mod tests {
     }
 
     /// Prova completa su un link diretto (senza YouTube):
-    /// GRABBIT_YTDLP=... GRABBIT_TEST_URL=http://127.0.0.1:8765/clip.mp4 cargo test -- --ignored --nocapture
+    /// DROPALL_YTDLP=... DROPALL_TEST_URL=http://127.0.0.1:8765/clip.mp4 cargo test -- --ignored --nocapture
     #[test]
     #[ignore]
     fn e2e_direct_link() {
         use std::sync::Mutex;
         let (Ok(bin), Ok(url)) = (
-            std::env::var("GRABBIT_YTDLP"),
-            std::env::var("GRABBIT_TEST_URL"),
+            std::env::var("DROPALL_YTDLP"),
+            std::env::var("DROPALL_TEST_URL"),
         ) else {
             return;
         };
-        let out = std::env::temp_dir().join("grabbit-e2e");
+        let out = std::env::temp_dir().join("dropall-e2e");
         let _ = std::fs::remove_dir_all(&out);
         let cfg = Config {
             mode: Mode::Video,
@@ -897,7 +897,7 @@ mod tests {
             })
         });
         let cancel = Arc::new(AtomicBool::new(false));
-        let cancel_after = std::env::var("GRABBIT_CANCEL_AFTER_MS")
+        let cancel_after = std::env::var("DROPALL_CANCEL_AFTER_MS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok());
         if let Some(ms) = cancel_after {

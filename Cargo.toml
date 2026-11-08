@@ -1,5 +1,5 @@
 [package]
-name = "grabbit"
+name = "dropall"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
@@ -7,7 +7,7 @@ description = "Universal downloader: video and music from YouTube and Spotify, p
 license = "GPL-3.0-or-later"
 # IMPORTANTE: metti qui l'URL del tuo repository GitHub. L'aggiornamento
 # automatico dell'app legge le release da questo repository.
-repository = "https://github.com/OWNER/grabbit"
+repository = "https://github.com/OWNER/dropall"
 build = "build.rs"
 
 [features]
