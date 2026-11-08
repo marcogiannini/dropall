@@ -1689,6 +1689,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "grabbit"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "cmake",
+ "directories",
+ "eframe",
+ "flate2",
+ "image",
+ "ksni",
+ "openssl-src",
+ "rfd",
+ "self-replace",
+ "semver",
+ "serde",
+ "serde_json",
+ "sys-locale",
+ "tar",
+ "tray-icon",
+ "ureq",
+ "winresource",
+ "xz2",
+ "zip",
+]
+
+[[package]]
 name = "gtk"
 version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
