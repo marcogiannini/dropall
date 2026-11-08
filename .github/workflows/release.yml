@@ -45,6 +45,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # serve per vedere i tag già esistenti
+      - name: Check the package name
+        shell: bash
+        run: |
+          if ! grep -qm1 '^name = "dropall"' Cargo.toml; then
+            echo "::error::Cargo.toml has name = \"$(grep -m1 '^name' Cargo.toml | cut -d'"' -f2)\" but the workflow expects \"dropall\". Upload the whole Dropall project (Cargo.toml and Cargo.lock included)."
+            exit 1
+          fi
       - id: meta
         shell: bash
         env:
