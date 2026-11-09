@@ -45,13 +45,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # serve per vedere i tag già esistenti
-      - name: Check the package name
-        shell: bash
-        run: |
-          if ! grep -qm1 '^name = "dropall"' Cargo.toml; then
-            echo "::error::Cargo.toml has name = \"$(grep -m1 '^name' Cargo.toml | cut -d'"' -f2)\" but the workflow expects \"dropall\". Upload the whole Dropall project (Cargo.toml and Cargo.lock included)."
-            exit 1
-          fi
       - id: meta
         shell: bash
         env:
@@ -109,7 +102,10 @@ jobs:
       - run: cargo build --release
       - name: Rinomina l'eseguibile
         shell: bash
-        run: cp target/release/dropall.exe dropall-windows-x86_64.exe
+        run: |
+          # il nome del programma si legge da Cargo.toml: un cambio di nome non rompe più la build
+          BIN=$(grep -m1 '^name' Cargo.toml | cut -d'"' -f2)
+          cp "target/release/$BIN.exe" dropall-windows-x86_64.exe
       # installer (Inno Setup): installa per l'utente corrente, quindi l'app può aggiornarsi da sola
       - name: Crea l'installer
         shell: pwsh
@@ -196,7 +192,8 @@ jobs:
           mkdir -p dist
           for pair in "aarch64:aarch64-apple-darwin" "x86_64:x86_64-apple-darwin"; do
             ARCH=${pair%%:*}; TARGET=${pair##*:}
-            BIN=target/$TARGET/release/dropall
+            NAME=$(grep -m1 '^name' Cargo.toml | cut -d'"' -f2)
+            BIN=target/$TARGET/release/$NAME
             # binario nudo: lo scarica l'aggiornamento automatico
             cp "$BIN" "dist/dropall-macos-$ARCH"
             # pacchetto .app: per la prima installazione.

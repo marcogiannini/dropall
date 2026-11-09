@@ -15,7 +15,8 @@ mkdir -p "$APPDIR/usr/bin" \
          "$APPDIR/usr/share/applications" \
          "$APPDIR/usr/share/icons/hicolor/512x512/apps"
 
-cp target/release/dropall                "$APPDIR/usr/bin/dropall"
+NAME=$(grep -m1 '^name' Cargo.toml | cut -d'"' -f2)
+cp "target/release/$NAME"                "$APPDIR/usr/bin/dropall"
 cp packaging/linux/dropall.desktop       "$APPDIR/dropall.desktop"
 cp packaging/linux/dropall.desktop       "$APPDIR/usr/share/applications/dropall.desktop"
 mkdir -p "$APPDIR/usr/share/doc/dropall"
