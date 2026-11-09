@@ -1,70 +1,79 @@
 # Dropall
 
-**Downloader universale**
+**Un solo programma per scaricare tutto: video, musica, file e torrent.**
 
 [English](README.md) · **Italiano**
 
-Scarica **video** e **musica** da YouTube e Spotify, qualsiasi file con il **download manager** incluso (più connessioni, code, pianificatore, limite di velocità) e **torrent** (link magnet e file `.torrent`), con un'interfaccia semplice.
-Scritto in Rust (leggero: l'AppImage pesa circa 4 MB), si appoggia a
-[yt-dlp](https://github.com/yt-dlp/yt-dlp) e funziona su Windows, Linux e macOS.
-L'interfaccia è in italiano se il sistema è in italiano, in inglese per qualsiasi altra lingua.
+<p align="center">
+  <img src="docs/screenshots/it-files.png" alt="Dropall mentre scarica file in coda, con la percentuale accanto a ogni barra" width="560">
+</p>
+
+Dropall è un programma gratuito e semplice per scaricare ciò che ti serve da internet. Incolli un link, premi un pulsante e al resto pensa lui:
+
+- **Video e musica** da YouTube e Spotify, nel formato e nella qualità che preferisci.
+- **Qualsiasi file** da un indirizzo web, più veloce grazie a più connessioni insieme, con code che puoi pianificare.
+- **Torrent**: incolla un link magnet, apri un file `.torrent` oppure clicca un link magnet nel browser.
+
+Funziona su **Windows, Linux e macOS**, è piccolo e leggero (l'AppImage per Linux pesa circa 4 MB), parla **italiano o inglese** in base al tuo sistema e si aggiorna da solo.
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/it-video.png" alt="Scheda Video e musica" width="100%"></td>
+    <td><img src="docs/screenshots/it-files.png" alt="Scheda File (download manager)" width="100%"></td>
+    <td><img src="docs/screenshots/it-torrent.png" alt="Scheda Torrent" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Video e musica</sub></td>
+    <td align="center"><sub>File (download manager)</sub></td>
+    <td align="center"><sub>Torrent</sub></td>
+  </tr>
+</table>
 
 ## Novità
 
-- **Torrent**, in una scheda a parte (con [libtorrent](https://github.com/arvidn/libtorrent)): incolla link magnet o
-  indirizzi di file `.torrent`, apri file `.torrent` dal tuo computer, oppure clicca un link magnet nel browser.
-- **Area di notifica (tray)**: riduci a icona e i download continuano.
-- **Percentuale** accanto a ogni barra di avanzamento e interfaccia più chiara, a tre schede.
-- **Installer per Windows** (`Dropall-Setup-windows-x86_64.exe`): installa solo per il tuo utente, senza permessi di
-  amministratore, con voce nel menu Start e disinstallatore; l'app continua ad aggiornarsi da sola. Resta anche l'`.exe` portatile.
-- **Download manager**, in una scheda a parte: file da qualsiasi link `http(s)` con fino a 16 connessioni
-  ciascuno, code scaricate una dopo l'altra, un pianificatore che avvia e ferma ogni coda da sola
-  e un limite di velocità condiviso da tutti i download.
-- **Playlist** salvate in una cartella con il nome della playlist, senza ripeterlo in ogni file.
-- **Aggiornamento automatico all'avvio**, con una riga di stato che dice com'è andato il controllo.
-- Interfaccia in **italiano e inglese**, scelta in base alla lingua del sistema.
-- **Supporto agli screen reader** su Windows, macOS e Linux.
-- **Barra del titolo corretta**: su Windows non compare più chiara e senza pulsanti al primo avvio; su Linux segue il tema di sistema.
-- **Testo più leggibile**: buon contrasto per il testo selezionato, dimensione regolabile.
-- **Software libero** con licenza GPL-3.0-or-later.
+- **Arrivano i torrent.** C'è una nuova scheda *Torrent*: incolla link magnet o indirizzi `.torrent`, apri i file `.torrent` dal computer (o trascinali sulla finestra), oppure clicca un link magnet nel browser e Dropall se ne occupa. Funziona con [libtorrent](https://github.com/arvidn/libtorrent).
+- **Scarica anche mentre non lo vedi.** Minimizza Dropall e va nell'area di notifica: video, file e torrent continuano a scaricare.
+- **Sai sempre a che punto sei:** ogni barra di avanzamento mostra la percentuale.
+- **Interfaccia più chiara:** tre schede (*Video e musica*, *File*, *Torrent*), ognuna con una riga che spiega a cosa serve.
+- **Nuovo nome e nuova icona:** il programma ora si chiama Dropall.
+- **Installer per Windows** (`Dropall-Setup-windows-x86_64.exe`): si installa solo per il tuo utente, senza diritti di amministratore, con voce nel menu Start e disinstallatore. L'`.exe` portatile resta disponibile.
+- **Download manager** per qualsiasi file `http(s)`: fino a 16 connessioni per file, code, pianificatore e un limite di velocità condivisibile.
+- **Le playlist** finiscono in una cartella col nome della playlist.
+- **Aggiornamenti automatici** all'avvio, con una riga che dice com'è andato il controllo.
+- **Supporto per screen reader** su Windows, macOS e Linux, barra del titolo che segue il tema del sistema e testo selezionato più leggibile.
 
 ## Cosa fa
 
-- **Video**: MP4 / MKV / WebM, qualità massima a scelta (fino a 4K).
-- **Audio**: MP3, M4A (AAC), Opus, OGG Vorbis, FLAC, WAV, con scelta del **bitrate**.
-- Cartella di destinazione a scelta, più link in un colpo solo (uno per riga).
-- **Playlist**: i file vanno in una cartella con il nome della playlist e si chiamano
-  `1 - Titolo.mp4`, `2 - Titolo.mp4`… (senza il nome della playlist nel nome del file).
-- Copertina e metadati incorporati nei file.
-- Coda con avanzamento in tempo reale e pulsante **Annulla**.
-- **Torrent** (scheda separata), tre modi per aggiungerli:
-  - incolla **link magnet** o indirizzi di file `.torrent` (uno per riga; anche la scheda File li gira qui);
-  - **apri file `.torrent`** dal computer: pulsante *Apri file .torrent…*, trascinamento sulla finestra, oppure
-    "Apri con" / doppio clic quando Dropall è l'app predefinita;
-  - clicca un **link magnet nel browser**: Dropall si avvia, o passa in primo piano se è già aperto
-    (istanza unica), e aggiunge il torrent.
-  I torrent riprendono dopo il riavvio, puoi scegliere di continuare a condividere dopo il download, limitare
-  l'upload (il limite di download è quello condiviso della scheda File) ed eliminare un torrent con o senza i file.
-  L'installer di Windows propone di registrare Dropall per i link `magnet:` e i file `.torrent` (solo utente corrente);
-  su Linux la voce del menu li dichiara. **macOS**: non ancora registrato come gestore: usa incolla, il pulsante di
-  apertura o il trascinamento.
-- **Area di notifica (tray)**: con l'opzione in fondo alla finestra (attiva di default) minimizzando Dropall si
-  nasconde nell'area di notifica e video, file e torrent continuano a scaricare; chiudendo la finestra mentre si
-  scarica succede lo stesso. Clic sull'icona per riaprirla; il menu ha *Mostra* ed *Esci*.
-  Su Linux usa lo standard StatusNotifierItem (KDE, Xfce, Cinnamon, e GNOME con l'estensione AppIndicator);
-  se il desktop non ha una tray la finestra si minimizza normalmente.
-- **Percentuale di completamento** accanto a ogni barra di avanzamento (video, file, torrent).
-- **Download manager** (scheda separata): scarica qualsiasi file da un link `http(s)`.
-  - **Più connessioni** per file (da 1 a 16): il file è diviso in blocchi scaricati in parallelo e
-    ogni connessione prende il blocco successivo appena finisce. Quanto più veloce diventa
-    dipende dal server (vedi «Come si comporta il download manager»).
-  - **Code**: più code con un nome; ognuna scarica i suoi file **uno dopo l'altro**, nell'ordine
-    dell'elenco (sposta su/giù, pausa, riprendi, riprova, rimuovi).
-  - **Pianificatore**: ogni coda può partire e fermarsi da sola agli orari e nei giorni scelti
-    (anche a cavallo della mezzanotte).
-  - **Limite di velocità**: un solo tetto per tutti i download (anche video e musica), così gli
-    altri possono usare la rete.
-  - Pausa e ripresa funzionano anche dopo aver chiuso l'app, se il server supporta gli intervalli.
+**Video e musica**
+
+- Video in MP4, MKV o WebM, con la qualità massima che vuoi (fino a 4K).
+- Audio in MP3, M4A (AAC), Opus, OGG Vorbis, FLAC o WAV, con scelta del bitrate.
+- Puoi incollare più link insieme (uno per riga) e scegliere dove salvare i file.
+- Le playlist vanno in una cartella col nome della playlist, con file chiamati `1 - Titolo.mp4`, `2 - Titolo.mp4`…
+- Copertina e metadati vengono inseriti nei file.
+- Una coda con avanzamento in tempo reale, percentuale su ogni barra e pulsante **Annulla**.
+
+**Qualsiasi file (download manager)**
+
+- **Più connessioni per file** (da 1 a 16): il file viene diviso in blocchi scaricati in parallelo. Quanto si guadagna dipende dal server (vedi sotto).
+- **Code**: quante ne vuoi. Ognuna scarica i suoi file uno dopo l'altro, nell'ordine dell'elenco; puoi spostare, mettere in pausa, riprendere, riprovare e rimuovere.
+- **Pianificatore**: una coda può partire e fermarsi da sola agli orari e nei giorni che scegli, anche a cavallo della mezzanotte.
+- **Limite di velocità**: un solo tetto per tutti i download (anche video e musica), così gli altri possono usare la rete.
+- Pausa e ripresa funzionano anche dopo aver chiuso l'app, se il server lo permette.
+
+**Torrent**
+
+- Tre modi per aggiungere un torrent: incolla **link magnet** o indirizzi `.torrent` (uno per riga); **apri un file `.torrent`** con il pulsante, trascinandolo sulla finestra o con «Apri con»; oppure clicca un **link magnet nel browser**: Dropall si apre, o passa in primo piano se è già in esecuzione, e lo aggiunge.
+- I torrent proseguono dopo un riavvio. Puoi continuare a condividere (seed) dopo il download, limitare la velocità di invio (per il download vale il limite condiviso) e rimuovere un torrent con o senza i suoi file.
+- L'installer per Windows può registrare Dropall per i link `magnet:` e i file `.torrent` (solo utente corrente); su Linux lo fa la voce del menu applicazioni. Su macOS, per ora, usa incolla, il pulsante di apertura o il trascinamento.
+
+**Area di notifica**
+
+- Con l'opzione in fondo alla finestra (attiva di default), minimizzando Dropall si nasconde nell'area di notifica mentre tutto continua a scaricare. Lo stesso accade se chiudi la finestra mentre c'è qualcosa in download. Clicca l'icona per riaprire la finestra; il menu ha *Mostra* ed *Esci*.
+- Su Linux usa lo standard StatusNotifierItem (KDE, Xfce, Cinnamon e GNOME con l'estensione AppIndicator). Se il tuo desktop non ha un'area di notifica, la finestra si minimizza e basta.
+
+**Pensa a tutto da solo**
+
 - **Si prepara da solo**: al primo avvio scarica yt-dlp, ffmpeg e Deno
   (il runtime JavaScript che yt-dlp richiede per YouTube); a ogni avvio
   controlla se esiste un yt-dlp più recente e lo aggiorna.
@@ -248,6 +257,7 @@ Per forzare la lingua dell'interfaccia (prove): `DROPALL_LANG=it` oppure `DROPAL
 | `src/selfupdate.rs` | aggiornamento automatico dell'app |
 | `src/config.rs` | impostazioni salvate |
 | `src/i18n.rs` | lingua dell'interfaccia (italiano / inglese) |
+| `docs/screenshots/` | screenshot usati in questo file e nelle note di rilascio |
 
 ## Problemi comuni
 

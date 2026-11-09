@@ -1,68 +1,79 @@
 # Dropall
 
-**Universal downloader**
+**One app to download everything: videos, music, files and torrents.**
 
 **English** · [Italiano](README.it.md)
 
-Download **video** and **music** from YouTube and Spotify, any file with the built-in **download manager** (multiple connections, queues, scheduler, speed limit), and **torrents** (magnet links and `.torrent` files), with a simple interface.
-Written in Rust (lightweight: the AppImage is about 4 MB), it relies on
-[yt-dlp](https://github.com/yt-dlp/yt-dlp) and runs on Windows, Linux and macOS.
-The interface is in Italian if your system language is Italian, and in English otherwise.
+<p align="center">
+  <img src="docs/screenshots/en-files.png" alt="Dropall downloading files in a queue, with a percentage next to each progress bar" width="560">
+</p>
+
+Dropall is a free, simple program for downloading things from the internet. Paste a link, press a button, and it does the rest:
+
+- **Videos and music** from YouTube and Spotify, in the format and quality you choose.
+- **Any file** from a web address, faster thanks to several simultaneous connections, with queues you can schedule.
+- **Torrents**: paste a magnet link, open a `.torrent` file, or just click a magnet link in your browser.
+
+It runs on **Windows, Linux and macOS**, it is small and lightweight (the Linux AppImage is about 4 MB), it speaks **Italian or English** depending on your system, and it keeps itself up to date.
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/en-video.png" alt="Video & music tab" width="100%"></td>
+    <td><img src="docs/screenshots/en-files.png" alt="Files tab (download manager)" width="100%"></td>
+    <td><img src="docs/screenshots/en-torrent.png" alt="Torrent tab" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Video &amp; music</sub></td>
+    <td align="center"><sub>Files (download manager)</sub></td>
+    <td align="center"><sub>Torrent</sub></td>
+  </tr>
+</table>
 
 ## What's new
 
-- **Torrents**, in their own tab (powered by [libtorrent](https://github.com/arvidn/libtorrent)): paste magnet links or
-  `.torrent` addresses, open `.torrent` files from your computer, or click a magnet link in your browser.
-- **System tray**: minimize to the notification area and downloads keep going.
-- **Percentage** next to every progress bar, and a clearer three-tab interface.
-- **Windows installer** (`Dropall-Setup-windows-x86_64.exe`): installs for your user only, no administrator rights,
-  with a Start menu entry and an uninstaller; the app keeps updating itself. The portable `.exe` is still there.
-- **Download manager**, in its own tab: files from any `http(s)` link with up to 16 connections each,
-  queues downloaded one after the other, a scheduler that starts and stops each queue by itself,
-  and a speed limit shared by all downloads.
-- **Playlists** are saved in a folder named after the playlist, without repeating its name in every file.
-- **Automatic updates at startup**, with a status line that tells you how the check went.
-- **Italian and English** interface, chosen from the system language.
-- **Screen reader support** on Windows, macOS and Linux.
-- **Window title bar fixed**: no more light bar without buttons at first launch on Windows; it follows the system theme on Linux.
-- **More readable text**: clear contrast for selected text, adjustable text size.
-- **Free software** under the GPL-3.0-or-later license.
+- **Torrents have arrived.** There is a new *Torrent* tab: paste magnet links or `.torrent` addresses, open `.torrent` files from your computer (or drag them onto the window), or click a magnet link in your browser and Dropall takes care of it. Powered by [libtorrent](https://github.com/arvidn/libtorrent).
+- **Keep downloading while it's out of the way.** Minimize Dropall and it tucks itself into the system tray; videos, files and torrents keep downloading.
+- **You always know how far along you are:** every progress bar now shows its percentage.
+- **Clearer layout:** three tabs (*Video & music*, *Files*, *Torrent*), each with a one-line explanation of what it is for.
+- **A new name and icon:** the program is now called Dropall.
+- **Windows installer** (`Dropall-Setup-windows-x86_64.exe`): installs for your user only, with no administrator rights, adds a Start menu entry and an uninstaller. The portable `.exe` is still there.
+- **Download manager** for any `http(s)` file: up to 16 connections per file, queues, a scheduler, and a speed limit that you can share across everything.
+- **Playlists** are saved in a folder named after the playlist.
+- **Automatic updates** at startup, with a line telling you how the check went.
+- **Screen reader support** on Windows, macOS and Linux, a title bar that follows your system theme, and clearer selected text.
 
 ## What it does
 
-- **Video**: MP4 / MKV / WebM, maximum quality of your choice (up to 4K).
-- **Audio**: MP3, M4A (AAC), Opus, OGG Vorbis, FLAC, WAV, with a **bitrate** choice.
-- Choose the destination folder; paste several links at once (one per line).
-- **Playlists**: files go into a folder named after the playlist and are called
-  `1 - Title.mp4`, `2 - Title.mp4`… (the playlist name is not part of the file name).
-- Cover art and metadata embedded in the files.
-- Queue with live progress and a **Cancel** button.
-- **Torrents** (separate tab), three ways to add them:
-  - paste **magnet links** or addresses of `.torrent` files (one per line; the Files tab also forwards them here);
-  - **open `.torrent` files** from your computer: *Open .torrent file…* button, drag and drop onto the window, or
-    "Open with" / double-click when Dropall is the default app;
-  - click a **magnet link in your browser**: Dropall starts, or is brought to the front if already running
-    (single instance), and adds the torrent.
-  Torrents resume after a restart (resume data is saved), you can choose to keep seeding after the download,
-  limit the upload speed (the download limit is the shared one of the Files tab) and delete a torrent with or without its files.
-  The Windows installer offers to register Dropall for `magnet:` links and `.torrent` files (current user only);
-  on Linux the desktop entry declares them. **macOS**: not registered as a handler yet: use paste, the open button or drag and drop.
-- **System tray**: with the option at the bottom of the window (on by default) minimizing hides Dropall in the
-  notification area and videos, files and torrents keep downloading; closing the window while something is downloading
-  does the same. Click the icon to bring the window back; the menu has *Show* and *Quit*.
-  On Linux the tray uses the StatusNotifierItem standard (KDE, Xfce, Cinnamon, and GNOME with the AppIndicator extension);
-  if your desktop has no tray, the window just minimizes normally.
-- **Percentage of completion** next to every progress bar (videos, files, torrents).
-- **Download manager** (separate tab): download any file from an `http(s)` link.
-  - **Multiple connections** per file (1 to 16): the file is split into blocks fetched in
-    parallel, and each connection takes the next block as soon as it finishes. How much faster it
-    gets depends on the server (see "How the download manager behaves").
-  - **Queues**: several named queues; each one downloads its files **one after the other**, in
-    the order of the list (move up/down, pause, resume, retry, remove).
-  - **Scheduler**: each queue can start and stop by itself at the times and on the days you choose
-    (also across midnight).
-  - **Speed limit**: one cap for all downloads (also video and music), so others can use the network.
-  - Pause and resume work even after closing the app, when the server supports ranges.
+**Videos and music**
+
+- Video as MP4, MKV or WebM, with the maximum quality you want (up to 4K).
+- Audio as MP3, M4A (AAC), Opus, OGG Vorbis, FLAC or WAV, with a choice of bitrate.
+- Paste several links at once (one per line) and choose where to save the files.
+- Playlists go into a folder named after the playlist, with files called `1 - Title.mp4`, `2 - Title.mp4`…
+- Cover art and metadata are embedded in the files.
+- A queue with live progress, a percentage on every bar and a **Cancel** button.
+
+**Any file (download manager)**
+
+- **Several connections per file** (1 to 16): the file is split into blocks fetched in parallel. How much faster it gets depends on the server (see below).
+- **Queues**: create as many as you like. Each one downloads its files one after the other, in the order of the list; you can move, pause, resume, retry and remove items.
+- **Scheduler**: a queue can start and stop by itself at the times and days you choose, even across midnight.
+- **Speed limit**: one cap for all downloads (video and music too), so other people can use the network.
+- Pause and resume still work after closing the app, when the server supports it.
+
+**Torrents**
+
+- Three ways to add a torrent: paste **magnet links** or `.torrent` addresses (one per line); **open a `.torrent` file** with the button, by dragging it onto the window or with "Open with"; or click a **magnet link in your browser**: Dropall opens, or comes to the front if it is already running, and adds it.
+- Torrents carry on after a restart. You can keep sharing (seeding) after the download, limit the upload speed (the download limit is the shared one) and remove a torrent with or without its files.
+- The Windows installer can register Dropall for `magnet:` links and `.torrent` files (current user only); on Linux the desktop entry does the same. On macOS, for now, use paste, the open button or drag and drop.
+
+**System tray**
+
+- With the option at the bottom of the window (on by default), minimizing hides Dropall in the notification area while everything keeps downloading. Closing the window while something is downloading does the same. Click the icon to bring the window back; its menu has *Show* and *Quit*.
+- On Linux this uses the StatusNotifierItem standard (KDE, Xfce, Cinnamon, and GNOME with the AppIndicator extension). If your desktop has no tray, the window simply minimizes.
+
+**It looks after itself**
+
 - **Sets itself up**: on first launch it downloads yt-dlp, ffmpeg and Deno
   (the JavaScript runtime yt-dlp needs for YouTube); on every launch it checks
   whether a newer yt-dlp exists and updates it.
@@ -246,6 +257,7 @@ To force the interface language (for testing): `DROPALL_LANG=it` or `DROPALL_LAN
 | `src/selfupdate.rs` | automatic app updates |
 | `src/config.rs` | saved settings |
 | `src/i18n.rs` | interface language (Italian / English) |
+| `docs/screenshots/` | screenshots used in this file and in the release notes |
 
 ## Common problems
 

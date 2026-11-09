@@ -141,6 +141,7 @@ fn clean_notes(body: &str) -> String {
         .filter(|l| {
             !l.contains("è stato scritto con l'aiuto di")
                 && !l.contains("was written with the help of")
+                && !is_media_line(l)
         })
         .map(plain_line)
         .collect::<Vec<_>>()
@@ -156,6 +157,12 @@ fn clean_notes(body: &str) -> String {
         }
     }
     out.trim().to_string()
+}
+
+/// Righe di sola immagine o HTML (screenshot nelle note): nell'app non servono.
+fn is_media_line(l: &str) -> bool {
+    let t = l.trim_start();
+    t.starts_with("![") || t.starts_with('<')
 }
 
 /// Toglie dal markdown ciò che nell'app comparirebbe come simboli: titoli, grassetto, apici.
@@ -304,8 +311,11 @@ mod tests {
             !c.contains('#') && !c.contains("**") && !c.contains('`'),
             "{c}"
         );
-        assert!(c.starts_with("Dropall — universal downloader"), "{c}");
-        assert!(c.contains("- Download manager"), "{c}");
+        assert!(
+            c.starts_with("Dropall — one app to download everything"),
+            "{c}"
+        );
+        assert!(c.contains("- A real download manager"), "{c}");
         assert!(!c.contains("\n\n\n"));
     }
 
@@ -313,6 +323,12 @@ mod tests {
     fn credit_line_is_hidden_in_app_notes() {
         let body = "Questo programma è stato scritto con l'aiuto di [Claude](https://claude.ai), l'assistente AI di Anthropic.\n\n## Cosa cambia\n* Tema scuro";
         assert_eq!(clean_notes(body), "Cosa cambia\n- Tema scuro");
+        assert_eq!(
+            clean_notes(
+                "Novità\n<p align=\"center\">\n<img src=\"x.png\">\n</p>\n<table>\n<tr><td>x</td></tr>\n![a](b.png)\n- Ok"
+            ),
+            "Novità\n- Ok"
+        );
         assert_eq!(
             clean_notes("solo credito: è stato scritto con l'aiuto di X"),
             ""
