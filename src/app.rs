@@ -121,6 +121,23 @@ enum Tab {
     Torrent,
 }
 
+/// Ctrl+V di riserva: se il campo ha il focus e la scorciatoia è stata premuta ma
+/// nessun testo è arrivato, chiede l'incolla alla finestra.
+pub(crate) fn paste_fallback(ctx: &egui::Context, resp: &egui::Response) {
+    if !resp.has_focus() {
+        return;
+    }
+    let (pressed, got) = ctx.input(|i| {
+        (
+            i.modifiers.command && i.key_pressed(egui::Key::V),
+            i.events.iter().any(|e| matches!(e, egui::Event::Paste(_))),
+        )
+    });
+    if pressed && !got {
+        ctx.send_viewport_cmd(egui::ViewportCommand::RequestPaste);
+    }
+}
+
 pub struct App {
     cfg: Config,
     tab: Tab,
@@ -776,6 +793,7 @@ impl App {
                 Some(id) => resp.labelled_by(id),
                 None => resp,
             };
+            paste_fallback(ui.ctx(), &resp);
             resp.context_menu(|ui| {
                 if ui.button(tr!("Incolla", "Paste")).clicked() {
                     paste = true;

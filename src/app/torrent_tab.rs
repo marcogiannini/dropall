@@ -59,6 +59,21 @@ impl App {
         self.torrent_list(ui, &items);
     }
 
+    /// Finestra "apri file": mostra i .torrent (e, come ripiego, tutti i file).
+    fn pick_torrent_files(&self, ctx: &egui::Context) {
+        let send = self.sender(ctx);
+        thread::spawn(move || {
+            if let Some(files) = rfd::FileDialog::new()
+                .set_title(tr!("Scegli i file .torrent", "Choose .torrent files"))
+                .add_filter("Torrent", &["torrent", "TORRENT"])
+                .add_filter(tr!("Tutti i file", "All files"), &["*"])
+                .pick_files()
+            {
+                send(Msg::TorFiles(files));
+            }
+        });
+    }
+
     fn torrent_add_card(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         let field_id = ui.scope_id().with("tor_field");
         card(ui, |ui| {
@@ -76,6 +91,16 @@ impl App {
                     .id,
                 );
                 paste = ui.small_button(tr!("Incolla", "Paste")).clicked();
+                if ui
+                    .small_button(tr!("Sfoglia…", "Browse…"))
+                    .on_hover_text(tr!(
+                        "Scegli uno o più file .torrent dal computer",
+                        "Choose one or more .torrent files from your computer"
+                    ))
+                    .clicked()
+                {
+                    self.pick_torrent_files(ctx);
+                }
                 if ui.small_button(tr!("Svuota", "Clear")).clicked() {
                     self.tor_ui.input.clear();
                 }
@@ -90,6 +115,7 @@ impl App {
                         "Paste magnet:… links or .torrent file addresses here, one per line"
                     )),
             );
+            super::paste_fallback(ui.ctx(), &resp);
             if let Some(id) = label_id {
                 resp.labelled_by(id);
             }
@@ -105,7 +131,10 @@ impl App {
                 .show(ui, |ui| {
                     ui.label(tr!("Salva in", "Save to"));
                     ui.horizontal(|ui| {
-                        if ui.button(tr!("Sfoglia…", "Browse…")).clicked() {
+                        if ui
+                            .button(tr!("Cambia cartella…", "Change folder…"))
+                            .clicked()
+                        {
                             let send = self.sender(ctx);
                             let start = self.cfg.torrent_dir.clone();
                             thread::spawn(move || {
@@ -165,22 +194,13 @@ impl App {
                     .add(egui::Button::new(open).min_size(egui::vec2(0.0, 32.0)))
                     .clicked()
                 {
-                    let send = self.sender(ctx);
-                    thread::spawn(move || {
-                        if let Some(files) = rfd::FileDialog::new()
-                            .set_title(tr!("Scegli i file .torrent", "Choose .torrent files"))
-                            .add_filter("Torrent", &["torrent"])
-                            .pick_files()
-                        {
-                            send(Msg::TorFiles(files));
-                        }
-                    });
+                    self.pick_torrent_files(ctx);
                 }
             });
             ui.label(
                 RichText::new(tr!(
-                    "Puoi anche trascinare qui i file .torrent, oppure aprire un link magnet dal browser: Dropall lo aggiunge da solo.",
-                    "You can also drag .torrent files here, or open a magnet link from your browser: Dropall adds it by itself."
+                    "Puoi anche trascinare qui i file .torrent dal computer (i link del browser vanno copiati e incollati), oppure aprire un link magnet dal browser: Dropall lo aggiunge da solo.",
+                    "You can also drag .torrent files here from your computer (browser links must be copied and pasted), or open a magnet link from your browser: Dropall adds it by itself."
                 ))
                 .small()
                 .color(ui.visuals().weak_text_color()),

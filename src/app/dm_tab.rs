@@ -98,6 +98,7 @@ impl App {
                         "Paste one or more http(s) file addresses here, one per line (magnet and .torrent links go to the Torrent tab)"
                     )),
             );
+            super::paste_fallback(ui.ctx(), &resp);
             if let Some(id) = label_id {
                 resp.labelled_by(id);
             }

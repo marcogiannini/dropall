@@ -10,6 +10,7 @@ Videos, music, files and torrents: paste a link, press a button, and Dropall doe
 
 ### What's new
 - **Torrents are here.** There's a new “Torrent” tab. Paste a magnet link or a `.torrent` address, open a `.torrent` file from your computer (or drag it onto the window), or just click a magnet link in your browser. Dropall opens, or comes to the front if it's already running, and starts it. Torrents pick up where they left off after a restart, and you can keep sharing them afterwards. On Windows the installer can set Dropall as the app for magnet links and `.torrent` files; on Linux the menu entry does it. On macOS, use paste, the open button or drag and drop.
+- **Easier to add torrents.** A “Browse…” button right above the link box lets you pick `.torrent` files (the folder button is now called “Change folder…”), and Ctrl+V now pastes into every link box even where it used to do nothing.
 - **Keep downloading while it's out of the way.** Minimize Dropall and it tucks itself into the system tray; videos, files and torrents keep downloading. Click the icon to bring it back. You can turn this off at the bottom of the window.
 - **See how far along you are.** Every progress bar now shows its percentage.
 - **Easier to understand.** Three tabs (“Video & music”, “Files”, “Torrent”), each with a short line saying what it's for.
