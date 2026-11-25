@@ -99,6 +99,7 @@ impl App {
                     )),
             );
             super::paste_fallback(ui.ctx(), &resp);
+            super::edit_menu(&resp, &mut self.dm_ui.input);
             if let Some(id) = label_id {
                 resp.labelled_by(id);
             }
@@ -354,6 +355,8 @@ impl App {
                     .hint_text(tr!("Nome della nuova coda", "New queue name"))
                     .desired_width(150.0),
             );
+            super::paste_fallback(ui.ctx(), &r);
+            super::edit_menu(&r, &mut self.dm_ui.new_queue);
             let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
             if ui.button(tr!("Crea coda", "Create queue")).clicked() || enter {
                 let name = std::mem::take(&mut self.dm_ui.new_queue);
@@ -459,12 +462,16 @@ impl App {
         // elenco dei download della coda
         let mine: Vec<&Item> = items.iter().filter(|i| i.queue == q.id).collect();
         if mine.is_empty() {
-            ui.label(
-                RichText::new(tr!(
-                    "Nessun download in questa coda. Incolla un indirizzo qui sopra e premi «Aggiungi».",
-                    "No downloads in this queue. Paste an address above and press “Add”."
-                ))
-                .color(ui.visuals().weak_text_color()),
+            super::empty_state(
+                ui,
+                tr!(
+                    "Nessun download in questa coda",
+                    "No downloads in this queue"
+                ),
+                tr!(
+                    "Incolla un indirizzo qui sopra e premi «Aggiungi».",
+                    "Paste an address above and press “Add”."
+                ),
             );
             return;
         }

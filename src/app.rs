@@ -138,6 +138,48 @@ pub(crate) fn paste_fallback(ctx: &egui::Context, resp: &egui::Response) {
     }
 }
 
+/// Menu del tasto destro per un campo di testo: Taglia, Copia, Incolla, Seleziona tutto, Svuota.
+/// Funziona anche dove la scorciatoia da tastiera non arriva (alcune tastiere, touchpad).
+pub(crate) fn edit_menu(resp: &egui::Response, text: &mut String) {
+    let id = resp.id;
+    resp.context_menu(|ui| {
+        let ctx = ui.ctx().clone();
+        let refocus = |ctx: &egui::Context| ctx.memory_mut(|m| m.request_focus(id));
+        if ui.button(tr!("Taglia", "Cut")).clicked() {
+            refocus(&ctx);
+            ctx.send_viewport_cmd(egui::ViewportCommand::RequestCut);
+            ui.close();
+        }
+        if ui.button(tr!("Copia", "Copy")).clicked() {
+            refocus(&ctx);
+            ctx.send_viewport_cmd(egui::ViewportCommand::RequestCopy);
+            ui.close();
+        }
+        if ui.button(tr!("Incolla", "Paste")).clicked() {
+            refocus(&ctx);
+            ctx.send_viewport_cmd(egui::ViewportCommand::RequestPaste);
+            ui.close();
+        }
+        if ui.button(tr!("Seleziona tutto", "Select all")).clicked() {
+            refocus(&ctx);
+            if let Some(mut st) = egui::TextEdit::load_state(&ctx, id) {
+                let end = text.chars().count();
+                st.cursor.set_char_range(Some(egui::text::CCursorRange::two(
+                    egui::text::CCursor::new(0),
+                    egui::text::CCursor::new(end),
+                )));
+                st.store(&ctx, id);
+            }
+            ui.close();
+        }
+        ui.separator();
+        if ui.button(tr!("Svuota", "Clear")).clicked() {
+            text.clear();
+            ui.close();
+        }
+    });
+}
+
 pub struct App {
     cfg: Config,
     tab: Tab,
@@ -554,8 +596,8 @@ impl eframe::App for App {
 
 fn card<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     egui::Frame::group(ui.style())
-        .corner_radius(10)
-        .inner_margin(12)
+        .corner_radius(12)
+        .inner_margin(14)
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
             add(ui)
@@ -563,42 +605,64 @@ fn card<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
         .inner
 }
 
+/// Riquadro per gli elenchi vuoti: dice a parole cosa fare, senza essere solo grigio.
+fn empty_state(ui: &mut egui::Ui, title: &str, body: &str) {
+    card(ui, |ui| {
+        ui.vertical_centered(|ui| {
+            ui.add_space(6.0);
+            ui.label(RichText::new(title).size(18.0).strong());
+            ui.label(RichText::new(body).color(ui.visuals().weak_text_color()));
+            ui.add_space(6.0);
+        });
+    });
+}
+
 impl App {
-    /// Schede in alto: "Video e musica" / "Download manager".
+    /// Schede in alto: tre riquadri uguali con titolo e una riga che spiega a cosa servono.
     fn tab_bar(&mut self, ui: &mut egui::Ui) {
+        let gap = ui.spacing().item_spacing.x;
+        let w = ((ui.available_width() - 2.0 * gap) / 3.0).max(90.0);
         ui.horizontal(|ui| {
-            for (tab, label) in [
-                (Tab::Media, tr!("Video e musica", "Video & music")),
+            for (tab, title, sub) in [
+                (
+                    Tab::Media,
+                    tr!("Video e musica", "Video & music"),
+                    "YouTube · Spotify",
+                ),
                 (
                     Tab::Manager,
-                    tr!("File (Download manager)", "Files (Download manager)"),
+                    tr!("File", "Files"),
+                    tr!("Qualsiasi indirizzo web", "Any web address"),
                 ),
-                (Tab::Torrent, "Torrent"),
+                (
+                    Tab::Torrent,
+                    "Torrent",
+                    tr!("Magnet · file .torrent", "Magnet · .torrent files"),
+                ),
             ] {
                 let selected = self.tab == tab;
-                let text = RichText::new(format!("  {label}  "))
-                    .size(17.0)
-                    .strong()
-                    .color(if selected {
-                        ON_ACCENT
-                    } else {
-                        ui.visuals().text_color()
-                    });
-                if accent_toggle(ui, selected, text).clicked() {
+                let busy = match tab {
+                    Tab::Media => self.running,
+                    Tab::Manager => self.dm.any_active(),
+                    Tab::Torrent => self.hub.any_active(),
+                };
+                // l'attività si dice a parole (non solo col colore) sotto il titolo
+                let sub = if busy && !selected {
+                    tr!("download in corso", "download in progress")
+                } else {
+                    sub
+                };
+                let sub_color = if busy {
+                    ACCENT_LIGHT
+                } else {
+                    ui.visuals().weak_text_color()
+                };
+                if accent_tile(ui, selected, title, sub, sub_color, egui::vec2(w, 56.0)).clicked() {
                     self.tab = tab;
                 }
             }
-            if (self.dm.any_active() && self.tab != Tab::Manager)
-                || (self.hub.any_active() && self.tab != Tab::Torrent)
-            {
-                ui.label(
-                    RichText::new(tr!("download in corso", "download in progress"))
-                        .small()
-                        .color(ACCENT_LIGHT),
-                );
-            }
         });
-        ui.separator();
+        ui.add_space(2.0);
         let hint = match self.tab {
             Tab::Media => tr!(
                 "Incolla il link di un video, di una playlist o di un brano di YouTube o Spotify.",
@@ -618,19 +682,15 @@ impl App {
 
     fn header(&self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.add(egui::Image::new((self.logo.id(), egui::vec2(46.0, 46.0))).alt_text("Dropall"));
+            ui.add(egui::Image::new((self.logo.id(), egui::vec2(44.0, 44.0))).alt_text("Dropall"));
             ui.vertical(|ui| {
-                ui.label(RichText::new("Dropall").size(28.0).strong());
-                ui.label(
-                    RichText::new(tr!("Downloader universale", "Universal downloader"))
-                        .color(ui.visuals().weak_text_color()),
-                );
+                ui.add_space(2.0);
+                ui.label(RichText::new("Dropall").size(26.0).strong());
                 ui.label(
                     RichText::new(tr!(
-                        "Video e musica · file da qualsiasi sito · torrent e magnet",
-                        "Video & music · files from any site · torrents & magnets"
+                        "Il downloader universale: video, musica, file e torrent",
+                        "The universal downloader: video, music, files and torrents"
                     ))
-                    .small()
                     .color(ui.visuals().weak_text_color()),
                 );
             });
@@ -773,7 +833,12 @@ impl App {
             let mut paste = false;
             let mut link_label = None;
             ui.horizontal(|ui| {
-                link_label = Some(ui.label(RichText::new("Link").strong()).id);
+                link_label = Some(
+                    ui.label(
+                        RichText::new(tr!("1. Incolla il link", "1. Paste the link")).strong(),
+                    )
+                    .id,
+                );
                 paste = ui.small_button(tr!("Incolla", "Paste")).clicked();
                 if ui.small_button(tr!("Svuota", "Clear")).clicked() {
                     self.input.clear();
@@ -794,16 +859,7 @@ impl App {
                 None => resp,
             };
             paste_fallback(ui.ctx(), &resp);
-            resp.context_menu(|ui| {
-                if ui.button(tr!("Incolla", "Paste")).clicked() {
-                    paste = true;
-                    ui.close();
-                }
-                if ui.button(tr!("Svuota", "Clear")).clicked() {
-                    self.input.clear();
-                    ui.close();
-                }
-            });
+            edit_menu(&resp, &mut self.input);
             if paste {
                 // il testo incollato va al campo che ha il focus: glielo ridiamo
                 ui.memory_mut(|m| m.request_focus(field_id));
@@ -815,6 +871,13 @@ impl App {
 
     fn options_card(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         card(ui, |ui| {
+            ui.label(
+                RichText::new(tr!(
+                    "2. Scegli cosa scaricare",
+                    "2. Choose what to download"
+                ))
+                .strong(),
+            );
             ui.horizontal(|ui| {
                 for (mode, label) in [
                     (Mode::Video, "  Video  "),
@@ -1024,7 +1087,7 @@ impl App {
                         .color(text_color),
                 )
                 .fill(fill)
-                .min_size(egui::vec2(0.0, 38.0));
+                .min_size(egui::vec2(200.0, 44.0));
                 // niente add_enabled: egui sfumerebbe ancora il testo; basta non rendere cliccabile il pulsante
                 let btn = btn.sense(if enabled {
                     egui::Sense::click()
@@ -1212,6 +1275,68 @@ fn accent_toggle(
     ui.visuals_mut().selection.bg_fill = old.0;
     ui.visuals_mut().selection.stroke = old.1;
     r
+}
+
+/// Riquadro-scheda di dimensione fissa: titolo e riga di aiuto centrati, arancione pieno
+/// quando è selezionato. Lo screen reader legge "titolo, aiuto" e sa se la scheda è attiva.
+fn accent_tile(
+    ui: &mut egui::Ui,
+    selected: bool,
+    title: &str,
+    sub: &str,
+    sub_color: Color32,
+    size: egui::Vec2,
+) -> egui::Response {
+    let (rect, resp) = ui.allocate_exact_size(size, egui::Sense::click());
+    let label = format!("{title}, {sub}");
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::Role::Tab, true, selected, &label)
+    });
+    if ui.is_rect_visible(rect) {
+        let (fill, stroke, c1, c2) = if selected {
+            (ACCENT, ACCENT_LIGHT, ON_ACCENT, ON_ACCENT)
+        } else if resp.hovered() {
+            (
+                Color32::from_rgb(58, 52, 48),
+                ACCENT,
+                ui.visuals().text_color(),
+                sub_color,
+            )
+        } else {
+            (
+                Color32::from_rgb(34, 34, 38),
+                Color32::from_rgb(70, 70, 78),
+                ui.visuals().text_color(),
+                sub_color,
+            )
+        };
+        let p = ui.painter();
+        p.rect(
+            rect,
+            10,
+            fill,
+            egui::Stroke::new(1.0, stroke),
+            egui::StrokeKind::Inside,
+        );
+        p.text(
+            rect.center() - egui::vec2(0.0, 9.0),
+            egui::Align2::CENTER_CENTER,
+            title,
+            egui::FontId::proportional(17.0),
+            c1,
+        );
+        p.text(
+            rect.center() + egui::vec2(0.0, 12.0),
+            egui::Align2::CENTER_CENTER,
+            sub,
+            egui::FontId::proportional(12.5),
+            c2,
+        );
+    }
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
 }
 
 fn load_logo(ctx: &egui::Context) -> egui::TextureHandle {

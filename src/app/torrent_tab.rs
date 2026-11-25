@@ -116,6 +116,7 @@ impl App {
                     )),
             );
             super::paste_fallback(ui.ctx(), &resp);
+            super::edit_menu(&resp, &mut self.tor_ui.input);
             if let Some(id) = label_id {
                 resp.labelled_by(id);
             }
@@ -300,12 +301,13 @@ impl App {
     fn torrent_list(&mut self, ui: &mut egui::Ui, items: &[TorrentItem]) {
         if items.is_empty() {
             ui.add_space(6.0);
-            ui.label(
-                RichText::new(tr!(
-                    "Nessun torrent. Incolla un link magnet qui sopra o apri un file .torrent per iniziare.",
-                    "No torrents yet. Paste a magnet link above or open a .torrent file to start."
-                ))
-                .color(ui.visuals().weak_text_color()),
+            super::empty_state(
+                ui,
+                tr!("Nessun torrent", "No torrents yet"),
+                tr!(
+                    "Incolla un link magnet qui sopra o apri un file .torrent per iniziare.",
+                    "Paste a magnet link above or open a .torrent file to start."
+                ),
             );
             return;
         }
