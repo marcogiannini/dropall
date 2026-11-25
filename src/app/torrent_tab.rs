@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Scheda "Torrent": link magnet, indirizzi di file .torrent e file .torrent locali.
-use super::{card, open_folder, progress_row, App, Msg, ACCENT, ERR, OK, ON_ACCENT, WARN};
+//! Torrent: righe dell'elenco, opzioni e funzioni per aprire file .torrent.
+use super::{card, open_folder, progress_row, App, Msg, ERR, OK, WARN};
 use crate::dm::{fmt_hms, fmt_size, fmt_speed};
 use crate::torrent::{TState, TorrentItem};
 use crate::tr;
@@ -10,7 +10,6 @@ use std::thread;
 
 #[derive(Default)]
 pub struct TorUi {
-    pub input: String,
     /// info-hash del torrent per cui si sta confermando "elimina con i file"
     pub confirm_delete: Option<String>,
     pub notes: Vec<String>,
@@ -32,7 +31,7 @@ fn state_text(s: TState) -> &'static str {
 fn state_color(s: TState, weak: Color32) -> Color32 {
     match s {
         TState::Checking | TState::Metadata => weak,
-        TState::Downloading => ACCENT,
+        TState::Downloading => super::ACCENT_TEXT,
         TState::Finished | TState::Seeding => OK,
         TState::Paused => WARN,
         TState::Error => ERR,
@@ -40,27 +39,8 @@ fn state_color(s: TState, weak: Color32) -> Color32 {
 }
 
 impl App {
-    pub(super) fn torrent_tab(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        for n in self.hub.take_notes() {
-            self.tor_ui.notes.push(n);
-        }
-        if self.tor_ui.up_val == 0 {
-            self.tor_ui.up_val = if self.cfg.torrent_up_kbps > 0 {
-                self.cfg.torrent_up_kbps
-            } else {
-                512
-            };
-        }
-        self.torrent_add_card(ui, ctx);
-        ui.add_space(8.0);
-        self.torrent_options_card(ui);
-        ui.add_space(8.0);
-        let items = self.hub.snapshot();
-        self.torrent_list(ui, &items);
-    }
-
     /// Finestra "apri file": mostra i .torrent (e, come ripiego, tutti i file).
-    fn pick_torrent_files(&self, ctx: &egui::Context) {
+    pub(super) fn pick_torrent_files(&self, ctx: &egui::Context) {
         let send = self.sender(ctx);
         thread::spawn(move || {
             if let Some(files) = rfd::FileDialog::new()
@@ -74,162 +54,7 @@ impl App {
         });
     }
 
-    fn torrent_add_card(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        let field_id = ui.scope_id().with("tor_field");
-        card(ui, |ui| {
-            let mut paste = false;
-            let mut label_id = None;
-            ui.horizontal(|ui| {
-                label_id = Some(
-                    ui.label(
-                        RichText::new(tr!(
-                            "Link magnet o indirizzi .torrent",
-                            "Magnet links or .torrent addresses"
-                        ))
-                        .strong(),
-                    )
-                    .id,
-                );
-                paste = ui.small_button(tr!("Incolla", "Paste")).clicked();
-                if ui
-                    .small_button(tr!("Sfoglia…", "Browse…"))
-                    .on_hover_text(tr!(
-                        "Scegli uno o più file .torrent dal computer",
-                        "Choose one or more .torrent files from your computer"
-                    ))
-                    .clicked()
-                {
-                    self.pick_torrent_files(ctx);
-                }
-                if ui.small_button(tr!("Svuota", "Clear")).clicked() {
-                    self.tor_ui.input.clear();
-                }
-            });
-            let resp = ui.add(
-                egui::TextEdit::multiline(&mut self.tor_ui.input)
-                    .id(field_id)
-                    .desired_rows(3)
-                    .desired_width(f32::INFINITY)
-                    .hint_text(tr!(
-                        "Incolla qui link magnet:… o indirizzi di file .torrent, uno per riga",
-                        "Paste magnet:… links or .torrent file addresses here, one per line"
-                    )),
-            );
-            super::paste_fallback(ui.ctx(), &resp);
-            super::edit_menu(&resp, &mut self.tor_ui.input);
-            if let Some(id) = label_id {
-                resp.labelled_by(id);
-            }
-            if paste {
-                ui.memory_mut(|m| m.request_focus(field_id));
-                ui.ctx()
-                    .send_viewport_cmd(egui::ViewportCommand::RequestPaste);
-            }
-            ui.add_space(6.0);
-            egui::Grid::new("tor_opts")
-                .num_columns(2)
-                .spacing([14.0, 8.0])
-                .show(ui, |ui| {
-                    ui.label(tr!("Salva in", "Save to"));
-                    ui.horizontal(|ui| {
-                        if ui
-                            .button(tr!("Cambia cartella…", "Change folder…"))
-                            .clicked()
-                        {
-                            let send = self.sender(ctx);
-                            let start = self.cfg.torrent_dir.clone();
-                            thread::spawn(move || {
-                                if let Some(p) = rfd::FileDialog::new()
-                                    .set_title(tr!(
-                                        "Scegli la cartella di destinazione",
-                                        "Choose the destination folder"
-                                    ))
-                                    .set_directory(start)
-                                    .pick_folder()
-                                {
-                                    send(Msg::TorFolder(p));
-                                }
-                            });
-                        }
-                        ui.add(egui::Label::new(self.cfg.torrent_dir.to_string_lossy()).truncate());
-                    });
-                    ui.end_row();
-                });
-            ui.add_space(8.0);
-            let has_input = self.tor_ui.input.lines().any(|l| !l.trim().is_empty());
-            ui.horizontal_wrapped(|ui| {
-                let (fill, text) = if has_input {
-                    (ACCENT, ON_ACCENT)
-                } else {
-                    (
-                        Color32::from_rgb(44, 44, 49),
-                        Color32::from_rgb(130, 130, 138),
-                    )
-                };
-                let sense = if has_input {
-                    egui::Sense::click()
-                } else {
-                    egui::Sense::hover()
-                };
-                let label = tr!("Aggiungi e scarica", "Add and download");
-                let r = ui.add(
-                    egui::Button::new(RichText::new(label).strong().color(text))
-                        .fill(fill)
-                        .sense(sense)
-                        .min_size(egui::vec2(0.0, 32.0)),
-                );
-                r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, has_input, label));
-                if r.clicked() {
-                    let lines: Vec<String> = self
-                        .tor_ui
-                        .input
-                        .lines()
-                        .map(|l| l.trim().to_string())
-                        .filter(|l| !l.is_empty())
-                        .collect();
-                    self.hub.add_lines(lines, self.cfg.torrent_dir.clone());
-                    self.tor_ui.input.clear();
-                }
-                let open = tr!("Apri file .torrent…", "Open .torrent file…");
-                if ui
-                    .add(egui::Button::new(open).min_size(egui::vec2(0.0, 32.0)))
-                    .clicked()
-                {
-                    self.pick_torrent_files(ctx);
-                }
-            });
-            ui.label(
-                RichText::new(tr!(
-                    "Puoi anche trascinare qui i file .torrent dal computer (i link del browser vanno copiati e incollati), oppure aprire un link magnet dal browser: Dropall lo aggiunge da solo.",
-                    "You can also drag .torrent files here from your computer (browser links must be copied and pasted), or open a magnet link from your browser: Dropall adds it by itself."
-                ))
-                .small()
-                .color(ui.visuals().weak_text_color()),
-            );
-            ui.label(
-                RichText::new(tr!(
-                    "Scarica solo contenuti che hai il diritto di scaricare e condividere.",
-                    "Only download content you have the right to download and share."
-                ))
-                .small()
-                .color(ui.visuals().weak_text_color()),
-            );
-            let mut clear = false;
-            for n in &self.tor_ui.notes {
-                ui.label(RichText::new(n).small().color(ERR));
-                clear = true;
-            }
-            if clear
-                && ui
-                    .small_button(tr!("Nascondi errori", "Dismiss errors"))
-                    .clicked()
-            {
-                self.tor_ui.notes.clear();
-            }
-        });
-    }
-
-    fn torrent_options_card(&mut self, ui: &mut egui::Ui) {
+    pub(super) fn torrent_options_card(&mut self, ui: &mut egui::Ui) {
         card(ui, |ui| {
             ui.label(RichText::new(tr!("Opzioni torrent", "Torrent options")).strong());
             if ui
@@ -289,8 +114,8 @@ impl App {
             }
             ui.label(
                 RichText::new(tr!(
-                    "Il limite di download è quello della scheda Download manager e vale anche per i torrent.",
-                    "The download limit is the one in the Download manager tab and also applies to torrents."
+                    "Il limite di download è quello generale (nelle Impostazioni, «Limite di velocità») e vale anche per i torrent.",
+                    "The download limit is the general one (Settings, “Speed limit”) and also applies to torrents."
                 ))
                 .small()
                 .color(ui.visuals().weak_text_color()),
@@ -298,28 +123,10 @@ impl App {
         });
     }
 
-    fn torrent_list(&mut self, ui: &mut egui::Ui, items: &[TorrentItem]) {
-        if items.is_empty() {
-            ui.add_space(6.0);
-            super::empty_state(
-                ui,
-                tr!("Nessun torrent", "No torrents yet"),
-                tr!(
-                    "Incolla un link magnet qui sopra o apri un file .torrent per iniziare.",
-                    "Paste a magnet link above or open a .torrent file to start."
-                ),
-            );
-            return;
-        }
-        for it in items {
-            self.torrent_row(ui, it);
-            ui.add_space(6.0);
-        }
-    }
-
-    fn torrent_row(&mut self, ui: &mut egui::Ui, it: &TorrentItem) {
+    pub(super) fn torrent_row(&mut self, ui: &mut egui::Ui, it: &TorrentItem) {
         let weak = ui.visuals().weak_text_color();
         egui::Frame::group(ui.style())
+            .fill(super::CARD_BG)
             .corner_radius(8)
             .inner_margin(10)
             .show(ui, |ui| {
@@ -335,6 +142,7 @@ impl App {
                     let (rect, _) =
                         ui.allocate_exact_size(egui::vec2(12.0, 14.0), egui::Sense::hover());
                     ui.painter().circle_filled(rect.center(), 5.0, col);
+                    super::home::kind_tag(ui, super::home::Kind::Torrent);
                     let r = ui.add(egui::Label::new(RichText::new(&name).strong()).truncate());
                     r.widget_info(|| {
                         egui::WidgetInfo::labeled(

@@ -5,7 +5,7 @@
 [English](README.md) · **Italiano**
 
 <p align="center">
-  <img src="docs/screenshots/it-files.png" alt="Dropall mentre scarica file in coda, con la percentuale accanto a ogni barra" width="560">
+  <img src="docs/screenshots/it-home.png" alt="Dropall: un solo campo per ogni link e un'unica lista di download" width="560">
 </p>
 
 Dropall è un programma gratuito e semplice per scaricare ciò che ti serve da internet. Incolli un link, premi un pulsante e al resto pensa lui:
@@ -18,23 +18,24 @@ Funziona su **Windows, Linux e macOS**, è piccolo e leggero (l'AppImage per Lin
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/it-video.png" alt="Scheda Video e musica" width="100%"></td>
-    <td><img src="docs/screenshots/it-files.png" alt="Scheda File (download manager)" width="100%"></td>
-    <td><img src="docs/screenshots/it-torrent.png" alt="Scheda Torrent" width="100%"></td>
+    <td><img src="docs/screenshots/it-home.png" alt="Un'unica lista con tutti i download" width="100%"></td>
+    <td><img src="docs/screenshots/it-link.png" alt="Incollando un link compaiono solo le opzioni utili" width="100%"></td>
+    <td><img src="docs/screenshots/it-settings.png" alt="Pannello delle impostazioni" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Video e musica</sub></td>
-    <td align="center"><sub>File (download manager)</sub></td>
-    <td align="center"><sub>Torrent</sub></td>
+    <td align="center"><sub>Tutto in un'unica lista</sub></td>
+    <td align="center"><sub>Incolli un link, vedi le sue opzioni</sub></td>
+    <td align="center"><sub>Impostazioni</sub></td>
   </tr>
 </table>
 
 ## Novità
 
-- **Arrivano i torrent.** C'è una nuova scheda *Torrent*: incolla link magnet o indirizzi `.torrent`, apri i file `.torrent` dal computer (o trascinali sulla finestra), oppure clicca un link magnet nel browser e Dropall se ne occupa. Funziona con [libtorrent](https://github.com/arvidn/libtorrent).
+- **Arrivano i torrent.** I torrent funzionano come tutto il resto: incolla link magnet o indirizzi `.torrent`, apri i file `.torrent` dal computer (o trascinali sulla finestra), oppure clicca un link magnet nel browser e Dropall se ne occupa. Funziona con [libtorrent](https://github.com/arvidn/libtorrent).
 - **Scarica anche mentre non lo vedi.** Minimizza Dropall e va nell'area di notifica: video, file e torrent continuano a scaricare.
 - **Sai sempre a che punto sei:** ogni barra di avanzamento mostra la percentuale.
-- **Interfaccia più chiara:** tre schede (*Video e musica*, *File*, *Torrent*), ognuna con una riga che spiega a cosa serve.
+- **Un solo campo per tutto.** Niente più schede: incolli un link qualsiasi e Dropall capisce da solo se è un video, un file o un torrent, poi mostra solo le opzioni che servono. Tutti i download stanno in un'unica lista con i filtri *Tutti / In corso / Completati*.
+- **Un aspetto chiaro.** L'interfaccia ora è chiara, con accento arancione e contrasto alto, e funziona sempre con gli screen reader.
 - **Nuovo nome e nuova icona:** il programma ora si chiama Dropall.
 - **Installer per Windows** (`Dropall-Setup-windows-x86_64.exe`): si installa solo per il tuo utente, senza diritti di amministratore, con voce nel menu Start e disinstallatore. L'`.exe` portatile resta disponibile.
 - **Download manager** per qualsiasi file `http(s)`: fino a 16 connessioni per file, code, pianificatore e un limite di velocità condivisibile.
@@ -245,8 +246,9 @@ Per forzare la lingua dell'interfaccia (prove): `DROPALL_LANG=it` oppure `DROPAL
 | `src/app.rs` | interfaccia grafica (egui) |
 | `src/downloader.rs` | costruisce i comandi yt-dlp, legge l'avanzamento, annulla |
 | `src/dm.rs` | motore del download manager: più connessioni, code, pianificatore, limite |
-| `src/app/dm_tab.rs` | scheda del download manager |
-| `src/app/torrent_tab.rs` | scheda Torrent |
+| `src/app/home.rs` | schermata principale: campo intelligente, filtri, lista unica e pannello impostazioni |
+| `src/app/dm_tab.rs` | righe dei file, code, pianificatore e limite di velocità |
+| `src/app/torrent_tab.rs` | righe dei torrent e opzioni |
 | `src/torrent.rs` | lato Rust del motore torrent (sessione, link, file `.torrent`) |
 | `native/gt.cpp` | piccolo strato C++ su libtorrent |
 | `third_party/libtorrent` | sorgenti di libtorrent (BSD-3-Clause), vedi *Licenza* |

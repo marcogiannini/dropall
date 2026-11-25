@@ -5,16 +5,15 @@ This program was written with the help of [Claude](https://claude.ai), Anthropic
 Videos, music, files and torrents: paste a link, press a button, and Dropall does the rest. It works on Windows, Linux and macOS.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-files.png" alt="Dropall downloading files in a queue" width="560">
+  <img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-home.png" alt="Dropall downloading files in a queue" width="560">
 </p>
 
 ### What's new
-- **Torrents are here.** There's a new “Torrent” tab. Paste a magnet link or a `.torrent` address, open a `.torrent` file from your computer (or drag it onto the window), or just click a magnet link in your browser. Dropall opens, or comes to the front if it's already running, and starts it. Torrents pick up where they left off after a restart, and you can keep sharing them afterwards. On Windows the installer can set Dropall as the app for magnet links and `.torrent` files; on Linux the menu entry does it. On macOS, use paste, the open button or drag and drop.
-- **Easier to add torrents.** A “Browse…” button right above the link box lets you pick `.torrent` files (the folder button is now called “Change folder…”), and Ctrl+V now pastes into every link box even where it used to do nothing. Right-clicking any text box now offers Cut, Copy, Paste, Select all and Clear.
-- **A fresher, clearer look.** Three big tabs with a line saying what each is for, a more compact header, numbered steps on the Video & music tab (1. paste the link, 2. choose what to download), a bigger Download button and friendlier empty lists. Everything still works with screen readers: tabs are announced as tabs, with their description and whether they are selected.
+- **Torrents are here.** Paste a magnet link or a `.torrent` address, open a `.torrent` file from your computer (or drag it onto the window), or just click a magnet link in your browser. Dropall opens, or comes to the front if it's already running, and starts it. Torrents pick up where they left off after a restart, and you can keep sharing them afterwards. On Windows the installer can set Dropall as the app for magnet links and `.torrent` files; on Linux the menu entry does it. On macOS, use paste, the open button or drag and drop.
+- **Easier copy and paste.** Ctrl+V now pastes into every link box even where it used to do nothing, and right-clicking any text box offers Cut, Copy, Paste, Select all and Clear.
+- **One box for everything, in a light look.** No more tabs: paste any link and Dropall works out by itself whether it is a video, a file or a torrent, then shows only the options that matter. All your downloads sit in one list with “All / In progress / Completed” filters, and the settings live in their own panel. The interface is now light, with an orange accent and high contrast. Everything still works with screen readers.
 - **Keep downloading while it's out of the way.** Minimize Dropall and it tucks itself into the system tray; videos, files and torrents keep downloading. Click the icon to bring it back. You can turn this off at the bottom of the window.
 - **See how far along you are.** Every progress bar now shows its percentage.
-- **Easier to understand.** Three tabs (“Video & music”, “Files”, “Torrent”), each with a short line saying what it's for.
 - **New name, new icon.** The program is now called Dropall.
 - **Windows installer.** `Dropall-Setup-windows-x86_64.exe` installs just for you, with no administrator rights, adds a Start menu entry and an uninstaller. The portable `.exe` is still there.
 - **A real download manager.** Download any file from a web link with up to 16 connections at once, line files up in queues, schedule when each queue runs, and set one speed limit for everything. You can pause and resume even after closing the app.
@@ -26,9 +25,9 @@ Videos, music, files and torrents: paste a link, press a button, and Dropall doe
 
 <table>
   <tr>
-    <td><img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-video.png" alt="Video & music" width="100%"></td>
-    <td><img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-files.png" alt="Files" width="100%"></td>
-    <td><img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-torrent.png" alt="Torrent" width="100%"></td>
+    <td><img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-home.png" alt="One list with all downloads" width="100%"></td>
+    <td><img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-link.png" alt="Paste a link, see its options" width="100%"></td>
+    <td><img src="https://raw.githubusercontent.com/marcogiannini/dropall/main/docs/screenshots/en-settings.png" alt="Settings" width="100%"></td>
   </tr>
 </table>
 

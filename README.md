@@ -5,7 +5,7 @@
 **English** · [Italiano](README.it.md)
 
 <p align="center">
-  <img src="docs/screenshots/en-files.png" alt="Dropall downloading files in a queue, with a percentage next to each progress bar" width="560">
+  <img src="docs/screenshots/en-home.png" alt="Dropall: one box for every link and a single list of downloads" width="560">
 </p>
 
 Dropall is a free, simple program for downloading things from the internet. Paste a link, press a button, and it does the rest:
@@ -18,23 +18,24 @@ It runs on **Windows, Linux and macOS**, it is small and lightweight (the Linux 
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/en-video.png" alt="Video & music tab" width="100%"></td>
-    <td><img src="docs/screenshots/en-files.png" alt="Files tab (download manager)" width="100%"></td>
-    <td><img src="docs/screenshots/en-torrent.png" alt="Torrent tab" width="100%"></td>
+    <td><img src="docs/screenshots/en-home.png" alt="One list with all downloads" width="100%"></td>
+    <td><img src="docs/screenshots/en-link.png" alt="Pasting a link shows only the options that matter" width="100%"></td>
+    <td><img src="docs/screenshots/en-settings.png" alt="Settings panel" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Video &amp; music</sub></td>
-    <td align="center"><sub>Files (download manager)</sub></td>
-    <td align="center"><sub>Torrent</sub></td>
+    <td align="center"><sub>Everything in one list</sub></td>
+    <td align="center"><sub>Paste a link, see its options</sub></td>
+    <td align="center"><sub>Settings</sub></td>
   </tr>
 </table>
 
 ## What's new
 
-- **Torrents have arrived.** There is a new *Torrent* tab: paste magnet links or `.torrent` addresses, open `.torrent` files from your computer (or drag them onto the window), or click a magnet link in your browser and Dropall takes care of it. Powered by [libtorrent](https://github.com/arvidn/libtorrent).
+- **Torrents have arrived.** Torrents work like everything else: paste magnet links or `.torrent` addresses, open `.torrent` files from your computer (or drag them onto the window), or click a magnet link in your browser and Dropall takes care of it. Powered by [libtorrent](https://github.com/arvidn/libtorrent).
 - **Keep downloading while it's out of the way.** Minimize Dropall and it tucks itself into the system tray; videos, files and torrents keep downloading.
 - **You always know how far along you are:** every progress bar now shows its percentage.
-- **Clearer layout:** three tabs (*Video & music*, *Files*, *Torrent*), each with a one-line explanation of what it is for.
+- **One box for everything.** No more tabs: paste any link and Dropall works out by itself whether it is a video, a file or a torrent, then shows only the options that matter. All your downloads sit in a single list with *All / In progress / Completed* filters.
+- **A light look.** The interface is now light, with an orange accent and high contrast, and still works with screen readers.
 - **A new name and icon:** the program is now called Dropall.
 - **Windows installer** (`Dropall-Setup-windows-x86_64.exe`): installs for your user only, with no administrator rights, adds a Start menu entry and an uninstaller. The portable `.exe` is still there.
 - **Download manager** for any `http(s)` file: up to 16 connections per file, queues, a scheduler, and a speed limit that you can share across everything.
@@ -245,8 +246,9 @@ To force the interface language (for testing): `DROPALL_LANG=it` or `DROPALL_LAN
 | `src/app.rs` | graphical interface (egui) |
 | `src/downloader.rs` | builds the yt-dlp commands, reads progress, cancels |
 | `src/dm.rs` | download manager engine: multi-connection, queues, scheduler, speed limit |
-| `src/app/dm_tab.rs` | download manager tab |
-| `src/app/torrent_tab.rs` | torrent tab |
+| `src/app/home.rs` | main screen: the smart link box, filters, the single list and the settings panel |
+| `src/app/dm_tab.rs` | file rows, queues, scheduler and speed limit |
+| `src/app/torrent_tab.rs` | torrent rows and options |
 | `src/torrent.rs` | Rust side of the torrent engine (session, links, `.torrent` files) |
 | `native/gt.cpp` | small C++ layer over libtorrent |
 | `third_party/libtorrent` | libtorrent source (BSD-3-Clause), see *License* |

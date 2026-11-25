@@ -14,21 +14,26 @@ use std::sync::Arc;
 use std::thread;
 
 mod dm_tab;
+mod home;
 mod torrent_tab;
 
-// Tema scuro con accento arancione.
+// Tema chiaro con accento arancione.
 const ACCENT: Color32 = Color32::from_rgb(249, 115, 22);
-/// Arancione più chiaro: contorni e focus.
-const ACCENT_LIGHT: Color32 = Color32::from_rgb(251, 146, 60);
+/// Arancione scuro per i testi su sfondo chiaro (contrasto oltre 5:1 sul bianco).
+const ACCENT_TEXT: Color32 = Color32::from_rgb(194, 65, 12);
 /// Testo sopra uno sfondo arancione (il bianco avrebbe poco contrasto).
 const ON_ACCENT: Color32 = Color32::from_rgb(26, 15, 5);
-/// Sfondo e testo del testo selezionato: arancione scuro con testo quasi bianco
-/// (contrasto circa 5:1; con l'arancione pieno il testo chiaro non si leggeva).
-const SELECTION_BG: Color32 = Color32::from_rgb(170, 74, 12);
-const SELECTION_TEXT: Color32 = Color32::from_rgb(255, 244, 230);
-const OK: Color32 = Color32::from_rgb(64, 185, 120);
-const ERR: Color32 = Color32::from_rgb(235, 87, 87);
-const WARN: Color32 = Color32::from_rgb(240, 205, 70);
+/// Testo selezionato: arancione chiaro con testo quasi nero.
+const SELECTION_BG: Color32 = Color32::from_rgb(253, 186, 116);
+const SELECTION_TEXT: Color32 = Color32::from_rgb(26, 15, 5);
+const OK: Color32 = Color32::from_rgb(21, 128, 61);
+const ERR: Color32 = Color32::from_rgb(185, 28, 28);
+const WARN: Color32 = Color32::from_rgb(161, 98, 7);
+/// Sfondo delle schede (riquadri) sopra il fondo beige.
+const CARD_BG: Color32 = Color32::WHITE;
+/// Pulsante principale non attivo: grigio chiaro con testo leggibile (oltre 4,5:1).
+const DISABLED_FILL: Color32 = Color32::from_rgb(232, 229, 221);
+const DISABLED_TEXT: Color32 = Color32::from_rgb(96, 92, 84);
 
 const VIDEO_FORMATS: [(&str, &str); 3] = [("mp4", "MP4"), ("mkv", "MKV"), ("webm", "WebM")];
 const HEIGHTS: [(u32, &str); 7] = [
@@ -113,14 +118,6 @@ struct ToolsUi {
     busy: bool,
 }
 
-/// Le due schede principali: video e musica, oppure download manager.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Tab {
-    Media,
-    Manager,
-    Torrent,
-}
-
 /// Ctrl+V di riserva: se il campo ha il focus e la scorciatoia è stata premuta ma
 /// nessun testo è arrivato, chiede l'incolla alla finestra.
 pub(crate) fn paste_fallback(ctx: &egui::Context, resp: &egui::Response) {
@@ -182,7 +179,7 @@ pub(crate) fn edit_menu(resp: &egui::Response, text: &mut String) {
 
 pub struct App {
     cfg: Config,
-    tab: Tab,
+    home: home::HomeUi,
     dm: dm::Manager,
     dm_ui: dm_tab::DmUi,
     /// ultime impostazioni del download manager salvate su disco
@@ -241,7 +238,7 @@ impl App {
         hub.set_seed_after(cfg.torrent_seed);
         hub.set_limits(cfg.speed_limit_kbps, cfg.torrent_up_kbps);
         let mut app = Self {
-            tab: Tab::Media,
+            home: home::HomeUi::default(),
             dm,
             dm_ui: dm_tab::DmUi::new(cfg.speed_limit_kbps),
             dm_saved: (
@@ -567,24 +564,13 @@ impl eframe::App for App {
                     self.header(ui);
                     ui.add_space(8.0);
                     self.update_banner(ui, ctx);
-                    self.tab_bar(ui);
-                    ui.add_space(8.0);
-                    match self.tab {
-                        Tab::Media => {
-                            self.tools_banner(ui, ctx);
-                            ui.add_space(4.0);
-                            self.link_card(ui);
-                            ui.add_space(8.0);
-                            self.options_card(ui, ctx);
-                            ui.add_space(10.0);
-                            self.action_row(ui, ctx);
-                            ui.add_space(10.0);
-                            self.queue(ui);
-                            self.log_view(ui);
-                        }
-                        Tab::Manager => self.dm_tab(ui, ctx),
-                        Tab::Torrent => self.torrent_tab(ui, ctx),
+                    self.tools_banner(ui, ctx);
+                    if self.home.settings {
+                        self.settings_panel(ui, ctx);
+                        ui.add_space(10.0);
                     }
+                    self.home(ui, ctx);
+                    self.log_view(ui);
                     ui.add_space(6.0);
                     self.footer(ui);
                 });
@@ -596,6 +582,7 @@ impl eframe::App for App {
 
 fn card<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     egui::Frame::group(ui.style())
+        .fill(CARD_BG)
         .corner_radius(12)
         .inner_margin(14)
         .show(ui, |ui| {
@@ -618,69 +605,15 @@ fn empty_state(ui: &mut egui::Ui, title: &str, body: &str) {
 }
 
 impl App {
-    /// Schede in alto: tre riquadri uguali con titolo e una riga che spiega a cosa servono.
-    fn tab_bar(&mut self, ui: &mut egui::Ui) {
-        let gap = ui.spacing().item_spacing.x;
-        let w = ((ui.available_width() - 2.0 * gap) / 3.0).max(90.0);
-        ui.horizontal(|ui| {
-            for (tab, title, sub) in [
-                (
-                    Tab::Media,
-                    tr!("Video e musica", "Video & music"),
-                    "YouTube · Spotify",
-                ),
-                (
-                    Tab::Manager,
-                    tr!("File", "Files"),
-                    tr!("Qualsiasi indirizzo web", "Any web address"),
-                ),
-                (
-                    Tab::Torrent,
-                    "Torrent",
-                    tr!("Magnet · file .torrent", "Magnet · .torrent files"),
-                ),
-            ] {
-                let selected = self.tab == tab;
-                let busy = match tab {
-                    Tab::Media => self.running,
-                    Tab::Manager => self.dm.any_active(),
-                    Tab::Torrent => self.hub.any_active(),
-                };
-                // l'attività si dice a parole (non solo col colore) sotto il titolo
-                let sub = if busy && !selected {
-                    tr!("download in corso", "download in progress")
-                } else {
-                    sub
-                };
-                let sub_color = if busy {
-                    ACCENT_LIGHT
-                } else {
-                    ui.visuals().weak_text_color()
-                };
-                if accent_tile(ui, selected, title, sub, sub_color, egui::vec2(w, 56.0)).clicked() {
-                    self.tab = tab;
-                }
-            }
-        });
-        ui.add_space(2.0);
-        let hint = match self.tab {
-            Tab::Media => tr!(
-                "Incolla il link di un video, di una playlist o di un brano di YouTube o Spotify.",
-                "Paste the link of a YouTube or Spotify video, playlist or track."
-            ),
-            Tab::Manager => tr!(
-                "Scarica qualsiasi file da un indirizzo web, con più connessioni, code e pianificazione.",
-                "Download any file from a web address, with multiple connections, queues and scheduling."
-            ),
-            Tab::Torrent => tr!(
-                "Scarica con BitTorrent da link magnet o da file .torrent.",
-                "Download with BitTorrent from magnet links or .torrent files."
-            ),
-        };
-        ui.label(RichText::new(hint).color(ui.visuals().weak_text_color()));
-    }
-
-    fn header(&self, ui: &mut egui::Ui) {
+    fn header(&mut self, ui: &mut egui::Ui) {
+        let snap = self.dm.snapshot();
+        let speed: f64 = snap.items.iter().map(|i| i.speed).sum::<f64>()
+            + self
+                .hub
+                .snapshot()
+                .iter()
+                .map(|t| t.down_rate as f64)
+                .sum::<f64>();
         ui.horizontal(|ui| {
             ui.add(egui::Image::new((self.logo.id(), egui::vec2(44.0, 44.0))).alt_text("Dropall"));
             ui.vertical(|ui| {
@@ -693,6 +626,25 @@ impl App {
                     ))
                     .color(ui.visuals().weak_text_color()),
                 );
+            });
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let label = tr!("Impostazioni", "Settings");
+                let open = self.home.settings;
+                let b = egui::Button::new(RichText::new(label).strong())
+                    .selected(open)
+                    .min_size(egui::vec2(0.0, 36.0));
+                if ui.add(b).clicked() {
+                    self.home.settings = !self.home.settings;
+                }
+                if speed > 1.0 {
+                    ui.label(
+                        RichText::new(tr!(
+                            format!("{} in totale", dm::fmt_speed(speed)),
+                            format!("{} in total", dm::fmt_speed(speed))
+                        ))
+                        .color(ui.visuals().weak_text_color()),
+                    );
+                }
             });
         });
     }
@@ -711,7 +663,7 @@ impl App {
                                 format!("New version {} available", rel.version)
                             ))
                             .strong()
-                            .color(ACCENT),
+                            .color(ACCENT_TEXT),
                         );
                         if selfupdate::supported() && rel.asset_url.is_some() {
                             if ui.button(tr!("Aggiorna ora", "Update now")).clicked() {
@@ -827,54 +779,12 @@ impl App {
         }
     }
 
-    fn link_card(&mut self, ui: &mut egui::Ui) {
-        let field_id = ui.scope_id().with("link_field");
-        card(ui, |ui| {
-            let mut paste = false;
-            let mut link_label = None;
-            ui.horizontal(|ui| {
-                link_label = Some(
-                    ui.label(
-                        RichText::new(tr!("1. Incolla il link", "1. Paste the link")).strong(),
-                    )
-                    .id,
-                );
-                paste = ui.small_button(tr!("Incolla", "Paste")).clicked();
-                if ui.small_button(tr!("Svuota", "Clear")).clicked() {
-                    self.input.clear();
-                }
-            });
-            let resp = ui.add(
-                egui::TextEdit::multiline(&mut self.input)
-                    .id(field_id)
-                    .desired_rows(3)
-                    .desired_width(f32::INFINITY)
-                    .hint_text(tr!(
-                        "Incolla qui uno o più link YouTube o Spotify, uno per riga (Ctrl+V)",
-                        "Paste one or more YouTube or Spotify links here, one per line (Ctrl+V)"
-                    )),
-            );
-            let resp = match link_label {
-                Some(id) => resp.labelled_by(id),
-                None => resp,
-            };
-            paste_fallback(ui.ctx(), &resp);
-            edit_menu(&resp, &mut self.input);
-            if paste {
-                // il testo incollato va al campo che ha il focus: glielo ridiamo
-                ui.memory_mut(|m| m.request_focus(field_id));
-                ui.ctx()
-                    .send_viewport_cmd(egui::ViewportCommand::RequestPaste);
-            }
-        });
-    }
-
     fn options_card(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         card(ui, |ui| {
             ui.label(
                 RichText::new(tr!(
-                    "2. Scegli cosa scaricare",
-                    "2. Choose what to download"
+                    "Opzioni per video e musica",
+                    "Options for video and music"
                 ))
                 .strong(),
             );
@@ -1058,79 +968,40 @@ impl App {
         });
     }
 
-    fn action_row(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        let has_input = self.input.lines().any(|l| !l.trim().is_empty());
-        let ready = self.tools.ytdlp.is_some() && !self.tools.busy;
-        ui.horizontal(|ui| {
-            if self.running {
-                let btn = egui::Button::new(RichText::new("   Annulla   ").size(18.0))
-                    .min_size(egui::vec2(0.0, 38.0));
-                if ui.add(btn).clicked() {
-                    self.cancel.store(true, Ordering::Relaxed);
-                }
-                ui.spinner();
-            } else {
-                let enabled = ready && has_input;
-                // attivo: arancione con testo scuro; disattivato: grigio, ben leggibile
-                let (fill, text_color) = if enabled {
-                    (ACCENT, ON_ACCENT)
-                } else {
-                    (
-                        Color32::from_rgb(44, 44, 49),
-                        Color32::from_rgb(130, 130, 138),
-                    )
-                };
-                let btn = egui::Button::new(
-                    RichText::new(tr!("   Scarica   ", "   Download   "))
-                        .size(18.0)
-                        .strong()
-                        .color(text_color),
-                )
-                .fill(fill)
-                .min_size(egui::vec2(200.0, 44.0));
-                // niente add_enabled: egui sfumerebbe ancora il testo; basta non rendere cliccabile il pulsante
-                let btn = btn.sense(if enabled {
-                    egui::Sense::click()
-                } else {
-                    egui::Sense::hover()
-                });
-                let resp = ui.add(btn);
-                resp.widget_info(|| {
-                    egui::WidgetInfo::labeled(
-                        egui::Role::Button,
-                        enabled,
-                        tr!("Scarica", "Download"),
-                    )
-                });
-                if resp.clicked() {
-                    self.start_download(ctx);
-                }
-                if !self.jobs.is_empty() && ui.button(tr!("Pulisci elenco", "Clear list")).clicked()
-                {
-                    self.jobs.clear();
-                }
-            }
-        });
-    }
-
-    fn queue(&self, ui: &mut egui::Ui) {
-        if self.jobs.is_empty() {
+    fn queue(&self, ui: &mut egui::Ui, filter: home::Filter) {
+        let shown: Vec<&JobUi> = self
+            .jobs
+            .iter()
+            .filter(|j| filter.accepts(j.state == JobState::Done))
+            .collect();
+        if shown.is_empty() {
             return;
         }
         card(ui, |ui| {
-            ui.label(RichText::new("Download").strong());
-            for j in &self.jobs {
+            ui.horizontal(|ui| {
+                ui.label(RichText::new(tr!("Video e musica", "Video & music")).strong());
+                if self.running {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button(tr!("Annulla", "Cancel")).clicked() {
+                            self.cancel.store(true, Ordering::Relaxed);
+                        }
+                        ui.spinner();
+                    });
+                }
+            });
+            for j in shown {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
                     let col = match j.state {
                         JobState::Waiting => ui.visuals().weak_text_color(),
-                        JobState::Running => ACCENT,
+                        JobState::Running => ACCENT_TEXT,
                         JobState::Done => OK,
                         JobState::Failed => ERR,
                     };
                     let (rect, _) =
                         ui.allocate_exact_size(egui::vec2(12.0, 14.0), egui::Sense::hover());
                     ui.painter().circle_filled(rect.center(), 5.0, col);
+                    home::kind_tag(ui, home::Kind::Media);
                     let state = match j.state {
                         JobState::Waiting => tr!("in attesa", "waiting"),
                         JobState::Running => tr!("in corso", "in progress"),
@@ -1277,68 +1148,6 @@ fn accent_toggle(
     r
 }
 
-/// Riquadro-scheda di dimensione fissa: titolo e riga di aiuto centrati, arancione pieno
-/// quando è selezionato. Lo screen reader legge "titolo, aiuto" e sa se la scheda è attiva.
-fn accent_tile(
-    ui: &mut egui::Ui,
-    selected: bool,
-    title: &str,
-    sub: &str,
-    sub_color: Color32,
-    size: egui::Vec2,
-) -> egui::Response {
-    let (rect, resp) = ui.allocate_exact_size(size, egui::Sense::click());
-    let label = format!("{title}, {sub}");
-    resp.widget_info(|| {
-        egui::WidgetInfo::selected(egui::Role::Tab, true, selected, &label)
-    });
-    if ui.is_rect_visible(rect) {
-        let (fill, stroke, c1, c2) = if selected {
-            (ACCENT, ACCENT_LIGHT, ON_ACCENT, ON_ACCENT)
-        } else if resp.hovered() {
-            (
-                Color32::from_rgb(58, 52, 48),
-                ACCENT,
-                ui.visuals().text_color(),
-                sub_color,
-            )
-        } else {
-            (
-                Color32::from_rgb(34, 34, 38),
-                Color32::from_rgb(70, 70, 78),
-                ui.visuals().text_color(),
-                sub_color,
-            )
-        };
-        let p = ui.painter();
-        p.rect(
-            rect,
-            10,
-            fill,
-            egui::Stroke::new(1.0, stroke),
-            egui::StrokeKind::Inside,
-        );
-        p.text(
-            rect.center() - egui::vec2(0.0, 9.0),
-            egui::Align2::CENTER_CENTER,
-            title,
-            egui::FontId::proportional(17.0),
-            c1,
-        );
-        p.text(
-            rect.center() + egui::vec2(0.0, 12.0),
-            egui::Align2::CENTER_CENTER,
-            sub,
-            egui::FontId::proportional(12.5),
-            c2,
-        );
-    }
-    if resp.hovered() {
-        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-    }
-    resp
-}
-
 fn load_logo(ctx: &egui::Context) -> egui::TextureHandle {
     let img = image::load_from_memory(include_bytes!("../assets/icon.png"))
         .expect("icona incorporata non valida")
@@ -1349,11 +1158,11 @@ fn load_logo(ctx: &egui::Context) -> egui::TextureHandle {
 }
 
 fn configure_style(ctx: &egui::Context) {
-    // Interfaccia sempre scura, anche se il sistema è in modalità chiara.
+    // Interfaccia sempre chiara, anche se il sistema è in modalità scura.
     // La barra del titolo, invece, la lascia gestire al sistema: forzarne il
     // tema da qui la rendeva chiara senza pulsanti su Windows al primo avvio
     // e non seguiva il tema di sistema su Linux.
-    ctx.set_theme(egui::ThemePreference::Dark);
+    ctx.set_theme(egui::ThemePreference::Light);
     ctx.options_mut(|o| o.sync_window_theme = false);
     ctx.all_styles_mut(|style| {
         style.spacing.item_spacing = egui::vec2(8.0, 7.0);
@@ -1383,17 +1192,20 @@ fn configure_style(ctx: &egui::Context) {
         style.spacing.interact_size.y = 28.0; // bersagli più comodi da cliccare
 
         let v = &mut style.visuals;
-        v.dark_mode = true;
-        // testo: chiaro (14:1 sullo sfondo), secondario ben leggibile (8:1)
-        v.widgets.noninteractive.fg_stroke =
-            egui::Stroke::new(1.0, Color32::from_rgb(226, 226, 232));
-        v.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(232, 232, 238));
-        v.widgets.hovered.fg_stroke = egui::Stroke::new(1.5, Color32::WHITE);
-        v.weak_text_color = Some(Color32::from_rgb(172, 172, 182));
-        v.panel_fill = Color32::from_rgb(20, 20, 22);
-        v.window_fill = Color32::from_rgb(26, 26, 29);
-        v.extreme_bg_color = Color32::from_rgb(12, 12, 14); // sfondo dei campi di testo
-        v.faint_bg_color = Color32::from_rgb(28, 28, 31);
+        v.dark_mode = false;
+        // testo scuro (oltre 14:1 sul fondo), secondario ben leggibile (oltre 6:1)
+        let ink = Color32::from_rgb(31, 29, 26);
+        v.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, ink);
+        v.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, ink);
+        v.widgets.hovered.fg_stroke = egui::Stroke::new(1.5, Color32::BLACK);
+        v.widgets.active.fg_stroke = egui::Stroke::new(1.5, ON_ACCENT);
+        v.widgets.open.fg_stroke = egui::Stroke::new(1.0, ink);
+        v.weak_text_color = Some(Color32::from_rgb(93, 90, 84));
+        v.panel_fill = Color32::from_rgb(244, 242, 238);
+        v.window_fill = Color32::WHITE;
+        // sfondo dei campi di testo e delle barre di avanzamento
+        v.extreme_bg_color = Color32::from_rgb(235, 231, 222);
+        v.faint_bg_color = Color32::from_rgb(238, 235, 229);
         v.override_text_color = None;
 
         // accento arancione: selezione, barra di avanzamento, link, bordo del campo con focus
@@ -1401,22 +1213,23 @@ fn configure_style(ctx: &egui::Context) {
         // devono contrastare tra loro (i pulsanti "attivi" usano l'arancione pieno: accent_toggle)
         v.selection.bg_fill = SELECTION_BG;
         v.selection.stroke = egui::Stroke::new(1.0, SELECTION_TEXT);
-        v.hyperlink_color = ACCENT_LIGHT;
+        v.hyperlink_color = ACCENT_TEXT;
 
-        v.widgets.noninteractive.bg_fill = Color32::from_rgb(28, 28, 31);
-        v.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(52, 52, 57));
-        v.widgets.inactive.bg_fill = Color32::from_rgb(44, 44, 49);
-        // contorno ben visibile su caselle, menu e pulsanti (prima si confondevano con lo sfondo)
-        v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(104, 104, 114));
-        v.widgets.inactive.weak_bg_fill = Color32::from_rgb(44, 44, 49);
-        v.widgets.hovered.bg_fill = Color32::from_rgb(58, 52, 48);
-        v.widgets.hovered.weak_bg_fill = Color32::from_rgb(58, 52, 48);
-        v.widgets.hovered.bg_stroke = egui::Stroke::new(1.0, ACCENT);
+        v.widgets.noninteractive.bg_fill = Color32::WHITE;
+        v.widgets.noninteractive.bg_stroke =
+            egui::Stroke::new(1.0, Color32::from_rgb(220, 215, 204));
+        v.widgets.inactive.bg_fill = Color32::WHITE;
+        // contorno ben visibile su caselle, menu e pulsanti (almeno 3:1 sullo sfondo)
+        v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(130, 125, 115));
+        v.widgets.inactive.weak_bg_fill = Color32::WHITE;
+        v.widgets.hovered.bg_fill = Color32::from_rgb(255, 237, 213);
+        v.widgets.hovered.weak_bg_fill = Color32::from_rgb(255, 237, 213);
+        v.widgets.hovered.bg_stroke = egui::Stroke::new(1.5, ACCENT_TEXT);
         v.widgets.active.bg_fill = ACCENT;
         v.widgets.active.weak_bg_fill = ACCENT;
-        v.widgets.active.bg_stroke = egui::Stroke::new(1.0, ACCENT_LIGHT);
-        v.widgets.open.bg_fill = Color32::from_rgb(58, 52, 48);
-        v.widgets.open.weak_bg_fill = Color32::from_rgb(58, 52, 48);
+        v.widgets.active.bg_stroke = egui::Stroke::new(1.0, ACCENT_TEXT);
+        v.widgets.open.bg_fill = Color32::from_rgb(255, 237, 213);
+        v.widgets.open.weak_bg_fill = Color32::from_rgb(255, 237, 213);
 
         let r = egui::CornerRadius::same(8);
         v.widgets.noninteractive.corner_radius = r;
@@ -1449,9 +1262,8 @@ fn progress_row(ui: &mut egui::Ui, fraction: f32) {
 }
 
 impl App {
-    /// Aggiunge link magnet, indirizzi e file .torrent alla scheda Torrent.
+    /// Aggiunge link magnet, indirizzi e file .torrent ai torrent.
     fn add_torrent_inputs(&mut self, lines: Vec<String>) {
-        self.tab = Tab::Torrent;
         self.hub.add_lines(lines, self.cfg.torrent_dir.clone());
     }
 

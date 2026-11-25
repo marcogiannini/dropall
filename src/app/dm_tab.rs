@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Scheda "Download manager": link, code, pianificazione e limite di velocità.
+//! Download manager: righe dei file, code, pianificazione e limite di velocità.
 use super::{
-    accent_toggle, card, open_folder, progress_row, App, Msg, ACCENT, ERR, OK, ON_ACCENT, WARN,
+    accent_toggle, card, open_folder, progress_row, App, ACCENT, ERR, OK, ON_ACCENT, WARN,
 };
 use crate::dm::{self, Item, Queue, Schedule, State};
 use crate::tr;
 use eframe::egui::{self, Color32, RichText};
 use std::path::PathBuf;
-use std::thread;
 
-const CONNECTIONS: [u8; 5] = [1, 2, 4, 8, 16];
+pub(super) const CONNECTIONS: [u8; 5] = [1, 2, 4, 8, 16];
 const SPEED_PRESETS: [u32; 4] = [256, 1024, 5 * 1024, 20 * 1024];
 
-/// Stato della scheda che non va salvato.
+/// Stato dell'interfaccia che non va salvato.
 pub struct DmUi {
-    pub input: String,
     pub queue: u64,
     pub new_queue: String,
     pub rename: Option<(u64, String)>,
@@ -26,7 +24,6 @@ pub struct DmUi {
 impl DmUi {
     pub fn new(limit_kbps: u32) -> Self {
         Self {
-            input: String::new(),
             queue: 0,
             new_queue: String::new(),
             rename: None,
@@ -49,7 +46,7 @@ fn state_text(s: State) -> &'static str {
 fn state_color(s: State, weak: Color32) -> Color32 {
     match s {
         State::Queued => weak,
-        State::Downloading => ACCENT,
+        State::Downloading => super::ACCENT_TEXT,
         State::Paused => WARN,
         State::Done => OK,
         State::Failed => ERR,
@@ -61,205 +58,7 @@ fn two_digits(v: f64, _: std::ops::RangeInclusive<usize>) -> String {
 }
 
 impl App {
-    pub(super) fn dm_tab(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        let snap = self.dm.snapshot();
-        if !snap.queues.iter().any(|q| q.id == self.dm_ui.queue) {
-            self.dm_ui.queue = snap.queues.first().map(|q| q.id).unwrap_or(1);
-        }
-        self.dm_add_card(ui, ctx, &snap.queues);
-        ui.add_space(8.0);
-        self.dm_speed_card(ui);
-        ui.add_space(8.0);
-        self.dm_queues(ui, &snap.queues, &snap.items);
-    }
-
-    fn dm_add_card(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, queues: &[Queue]) {
-        let field_id = ui.scope_id().with("dm_field");
-        card(ui, |ui| {
-            let mut paste = false;
-            let mut label_id = None;
-            ui.horizontal(|ui| {
-                label_id = Some(
-                    ui.label(RichText::new(tr!("Indirizzi dei file", "File addresses")).strong())
-                        .id,
-                );
-                paste = ui.small_button(tr!("Incolla", "Paste")).clicked();
-                if ui.small_button(tr!("Svuota", "Clear")).clicked() {
-                    self.dm_ui.input.clear();
-                }
-            });
-            let resp = ui.add(
-                egui::TextEdit::multiline(&mut self.dm_ui.input)
-                    .id(field_id)
-                    .desired_rows(3)
-                    .desired_width(f32::INFINITY)
-                    .hint_text(tr!(
-                        "Incolla qui uno o più indirizzi http(s) di file, uno per riga (i link magnet e .torrent vanno nella scheda Torrent)",
-                        "Paste one or more http(s) file addresses here, one per line (magnet and .torrent links go to the Torrent tab)"
-                    )),
-            );
-            super::paste_fallback(ui.ctx(), &resp);
-            super::edit_menu(&resp, &mut self.dm_ui.input);
-            if let Some(id) = label_id {
-                resp.labelled_by(id);
-            }
-            if paste {
-                ui.memory_mut(|m| m.request_focus(field_id));
-                ui.ctx()
-                    .send_viewport_cmd(egui::ViewportCommand::RequestPaste);
-            }
-            ui.add_space(6.0);
-
-            egui::Grid::new("dm_opts")
-                .num_columns(2)
-                .spacing([14.0, 8.0])
-                .show(ui, |ui| {
-                    ui.label(tr!("Salva in", "Save to"));
-                    ui.horizontal(|ui| {
-                        if ui.button(tr!("Sfoglia…", "Browse…")).clicked() {
-                            let send = self.sender(ctx);
-                            let start = self.cfg.dm_dir.clone();
-                            thread::spawn(move || {
-                                if let Some(p) = rfd::FileDialog::new()
-                                    .set_title(tr!(
-                                        "Scegli la cartella di destinazione",
-                                        "Choose the destination folder"
-                                    ))
-                                    .set_directory(start)
-                                    .pick_folder()
-                                {
-                                    send(Msg::DmFolder(p));
-                                }
-                            });
-                        }
-                        ui.add(egui::Label::new(self.cfg.dm_dir.to_string_lossy()).truncate());
-                    });
-                    ui.end_row();
-
-                    ui.label(tr!("Coda", "Queue"));
-                    let current = queues
-                        .iter()
-                        .find(|q| q.id == self.dm_ui.queue)
-                        .map(|q| q.name.clone())
-                        .unwrap_or_default();
-                    egui::ComboBox::from_id_salt("dm_queue_pick")
-                        .selected_text(current)
-                        .show_ui(ui, |ui| {
-                            for q in queues {
-                                ui.selectable_value(&mut self.dm_ui.queue, q.id, &q.name);
-                            }
-                        });
-                    ui.end_row();
-
-                    ui.label(tr!("Connessioni", "Connections"));
-                    ui.horizontal(|ui| {
-                        egui::ComboBox::from_id_salt("dm_conns")
-                            .selected_text(self.cfg.dm_connections.to_string())
-                            .show_ui(ui, |ui| {
-                                for c in CONNECTIONS {
-                                    ui.selectable_value(
-                                        &mut self.cfg.dm_connections,
-                                        c,
-                                        c.to_string(),
-                                    );
-                                }
-                            });
-                        ui.label(
-                            RichText::new(tr!(
-                                "Più connessioni scaricano più in fretta se il server lo permette.",
-                                "More connections download faster if the server allows it."
-                            ))
-                            .small()
-                            .color(ui.visuals().weak_text_color()),
-                        );
-                    });
-                    ui.end_row();
-                });
-            ui.add_space(8.0);
-
-            let has_input = self.dm_ui.input.lines().any(|l| !l.trim().is_empty());
-            ui.horizontal(|ui| {
-                let (fill, text) = if has_input {
-                    (ACCENT, ON_ACCENT)
-                } else {
-                    (
-                        Color32::from_rgb(44, 44, 49),
-                        Color32::from_rgb(130, 130, 138),
-                    )
-                };
-                let sense = if has_input {
-                    egui::Sense::click()
-                } else {
-                    egui::Sense::hover()
-                };
-                let start_label = tr!("Aggiungi e scarica", "Add and download");
-                let b = egui::Button::new(RichText::new(start_label).strong().color(text))
-                    .fill(fill)
-                    .sense(sense)
-                    .min_size(egui::vec2(0.0, 32.0));
-                let r1 = ui.add(b);
-                r1.widget_info(|| {
-                    egui::WidgetInfo::labeled(egui::Role::Button, has_input, start_label)
-                });
-                let add_label = tr!("Aggiungi alla coda", "Add to queue");
-                let r2 = ui.add(
-                    egui::Button::new(add_label)
-                        .sense(sense)
-                        .min_size(egui::vec2(0.0, 32.0)),
-                );
-                r2.widget_info(|| {
-                    egui::WidgetInfo::labeled(egui::Role::Button, has_input, add_label)
-                });
-                let go = r1.clicked();
-                if go || r2.clicked() {
-                    // magnet e .torrent vanno al motore torrent
-                    let (tor, plain): (Vec<&str>, Vec<&str>) = self
-                        .dm_ui
-                        .input
-                        .lines()
-                        .map(|l| l.trim())
-                        .filter(|l| !l.is_empty())
-                        .partition(|l| crate::torrent::is_torrent_source(l));
-                    let tor: Vec<String> = tor.into_iter().map(String::from).collect();
-                    let plain = plain.join("\n");
-                    if !tor.is_empty() {
-                        self.add_torrent_inputs(tor);
-                    }
-                    let n = self.dm.add(
-                        &plain,
-                        &self.cfg.dm_dir,
-                        self.dm_ui.queue,
-                        self.cfg.dm_connections,
-                    );
-                    if n > 0 || plain.trim().is_empty() {
-                        self.dm_ui.input.clear();
-                        if go && n > 0 {
-                            self.dm.start_queue(self.dm_ui.queue);
-                        }
-                    }
-                }
-            });
-            if !self.dm_ui.input.trim().is_empty()
-                && !self.dm_ui.input.lines().any(|l| {
-                    let t = l.trim();
-                    t.starts_with("http://")
-                        || t.starts_with("https://")
-                        || crate::torrent::is_torrent_source(t)
-                })
-            {
-                ui.label(
-                    RichText::new(tr!(
-                        "Gli indirizzi devono iniziare con http:// o https://",
-                        "Addresses must start with http:// or https://"
-                    ))
-                    .small()
-                    .color(WARN),
-                );
-            }
-        });
-    }
-
-    fn dm_speed_card(&mut self, ui: &mut egui::Ui) {
+    pub(super) fn dm_speed_card(&mut self, ui: &mut egui::Ui) {
         card(ui, |ui| {
             ui.label(RichText::new(tr!("Limite di velocità", "Speed limit")).strong());
             let mut on = self.cfg.speed_limit_kbps > 0;
@@ -325,7 +124,7 @@ impl App {
         });
     }
 
-    fn dm_queues(&mut self, ui: &mut egui::Ui, queues: &[Queue], items: &[Item]) {
+    pub(super) fn dm_queues(&mut self, ui: &mut egui::Ui, queues: &[Queue], items: &[Item]) {
         // schede delle code
         ui.horizontal_wrapped(|ui| {
             for q in queues {
@@ -457,29 +256,6 @@ impl App {
             ui.add_space(4.0);
             self.dm_schedule(ui, &q);
         });
-        ui.add_space(8.0);
-
-        // elenco dei download della coda
-        let mine: Vec<&Item> = items.iter().filter(|i| i.queue == q.id).collect();
-        if mine.is_empty() {
-            super::empty_state(
-                ui,
-                tr!(
-                    "Nessun download in questa coda",
-                    "No downloads in this queue"
-                ),
-                tr!(
-                    "Incolla un indirizzo qui sopra e premi «Aggiungi».",
-                    "Paste an address above and press “Add”."
-                ),
-            );
-            return;
-        }
-        let last = mine.len() - 1;
-        for (n, it) in mine.iter().enumerate() {
-            self.dm_row(ui, it, n == 0, n == last);
-            ui.add_space(4.0);
-        }
     }
 
     fn dm_schedule(&mut self, ui: &mut egui::Ui, q: &Queue) {
@@ -558,9 +334,10 @@ impl App {
         }
     }
 
-    fn dm_row(&mut self, ui: &mut egui::Ui, it: &Item, first: bool, last: bool) {
+    pub(super) fn dm_row(&mut self, ui: &mut egui::Ui, it: &Item, first: bool, last: bool) {
         let weak = ui.visuals().weak_text_color();
         egui::Frame::group(ui.style())
+            .fill(super::CARD_BG)
             .corner_radius(8)
             .inner_margin(10)
             .show(ui, |ui| {
@@ -571,6 +348,7 @@ impl App {
                     let (rect, _) =
                         ui.allocate_exact_size(egui::vec2(12.0, 14.0), egui::Sense::hover());
                     ui.painter().circle_filled(rect.center(), 5.0, col);
+                    super::home::kind_tag(ui, super::home::Kind::File);
                     let r =
                         ui.add(egui::Label::new(RichText::new(&it.file_name).strong()).truncate());
                     r.widget_info(|| {
