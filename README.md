@@ -14,6 +14,8 @@ Dropall is a free, simple program for downloading things from the internet. Past
 - **Any file** from a web address, faster thanks to several simultaneous connections, with queues you can schedule.
 - **Torrents**: paste a magnet link, open a `.torrent` file, or just click a magnet link in your browser.
 
+> **Use it responsibly.** Dropall is a neutral tool: it hosts and distributes nothing. Download and share only content you have the right to: your own, in the public domain, under a licence that allows it, or with the owner's permission. You are responsible for what you download. See [Legal notice](#legal-notice).
+
 It runs on **Windows, Linux and macOS**, it is small and lightweight (the Linux AppImage is about 4 MB), it speaks **Italian or English** depending on your system, and it keeps itself up to date.
 
 <table>
@@ -35,7 +37,8 @@ It runs on **Windows, Linux and macOS**, it is small and lightweight (the Linux 
 - **Keep downloading while it's out of the way.** Minimize Dropall and it tucks itself into the system tray; videos, files and torrents keep downloading.
 - **You always know how far along you are:** every progress bar now shows its percentage.
 - **One box for everything.** No more tabs: paste any link and Dropall works out by itself whether it is a video, a file or a torrent, then shows only the options that matter. All your downloads sit in a single list with *All / In progress / Completed* filters.
-- **A light look.** The interface is now light, with an orange accent and high contrast, and still works with screen readers.
+- **A dark, flat look.** Dark interface with an orange accent and high contrast, a new flat icon, and everything still works with screen readers.
+- **Legal notice.** On first launch Dropall asks you to read and accept a short notice about responsible use; you can read it again any time from the bottom of the window. See [Legal notice](#legal-notice).
 - **A new name and icon:** the program is now called Dropall.
 - **Windows installer** (`Dropall-Setup-windows-x86_64.exe`): installs for your user only, with no administrator rights, adds a Start menu entry and an uninstaller. The portable `.exe` is still there.
 - **Download manager** for any `http(s)` file: up to 16 connections per file, queues, a scheduler, and a speed limit that you can share across everything.
@@ -116,7 +119,7 @@ Spotify encrypts its audio (DRM) and yt-dlp cannot download it. Dropall only rea
   working until Dropall is updated.
 
 > Use Dropall only for content you have the right to download and in compliance with
-> the copyright and terms of service of the platforms.
+> the copyright and terms of service of the platforms. See [Legal notice](#legal-notice).
 
 ## Installation
 
@@ -246,6 +249,7 @@ To force the interface language (for testing): `DROPALL_LANG=it` or `DROPALL_LAN
 | `src/app.rs` | graphical interface (egui) |
 | `src/downloader.rs` | builds the yt-dlp commands, reads progress, cancels |
 | `src/dm.rs` | download manager engine: multi-connection, queues, scheduler, speed limit |
+| `src/app/legal.rs` | legal notice window (first launch and on demand) |
 | `src/app/home.rs` | main screen: the smart link box, filters, the single list and the settings panel |
 | `src/app/dm_tab.rs` | file rows, queues, scheduler and speed limit |
 | `src/app/torrent_tab.rs` | torrent rows and options |
@@ -275,6 +279,41 @@ To force the interface language (for testing): `DROPALL_LANG=it` or `DROPALL_LAN
   Silicon); if you have Homebrew (`brew install ffmpeg`) that one is used instead.
 - **Linux without AppImage** (binary started by hand): it works, but the app cannot
   replace itself; it only shows the link to the new release.
+
+## Legal notice
+
+This section is information for users, **not legal advice**. If you need certainty about your
+situation, ask a lawyer in your country.
+
+**What Dropall is.** A free, open-source download tool. It does not host, search, index or
+distribute any content, it has no catalogue, and it does not bypass DRM or other technical
+protection measures. It downloads only the addresses *you* give it, using
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) (video and music), plain HTTP(S) (files) and
+[libtorrent](https://github.com/arvidn/libtorrent) (BitTorrent).
+
+**What is expected of you.**
+
+- Download and share only content you have the right to: your own, in the public domain,
+  under a licence that allows it (for example Creative Commons), or with the rights holder's permission.
+- Respect copyright law and the terms of service of the sites you use. YouTube, Spotify and
+  other platforms may forbid downloading in their terms: those terms bind you, not Dropall.
+- Spotify: Dropall only reads the public data of a link (title, artist) and looks for the same
+  track on YouTube. This does not make it lawful to download protected works.
+- Torrents: while you download you also upload to other people, and your IP address is visible to
+  the other participants. Dropall is not an anonymity service. You can limit or turn off sharing in the settings.
+- Laws differ from country to country (private copy exceptions, penalties and so on). Find out what applies to you.
+
+**What the authors do.** They do not condone copyright infringement, do not offer support for
+downloading from unlawful sources, and do not add features aimed at specific piracy sites.
+The software is provided “as is”, without warranty of any kind; to the extent permitted by law, the
+authors are not liable for damage or legal consequences arising from its use (see the licence, sections 15 and 16).
+
+**In the app.** On first launch you must read the notice and confirm that you will use Dropall only for
+content you have the right to download; until then downloads are disabled. The notice stays available from
+*Legal notice* at the bottom of the window.
+
+**Rights holders.** Dropall hosts no content, so there is nothing to take down in this repository.
+If you believe the code itself infringes your rights, open an issue on the repository.
 
 ## License
 

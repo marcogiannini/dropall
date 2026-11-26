@@ -15,25 +15,27 @@ use std::thread;
 
 mod dm_tab;
 mod home;
+mod legal;
 mod torrent_tab;
 
-// Tema chiaro con accento arancione.
+// Tema scuro con accento arancione.
 const ACCENT: Color32 = Color32::from_rgb(249, 115, 22);
-/// Arancione scuro per i testi su sfondo chiaro (contrasto oltre 5:1 sul bianco).
-const ACCENT_TEXT: Color32 = Color32::from_rgb(194, 65, 12);
+/// Arancione chiaro per i testi e i contorni su sfondo scuro (contrasto oltre 7:1).
+const ACCENT_TEXT: Color32 = Color32::from_rgb(251, 146, 60);
 /// Testo sopra uno sfondo arancione (il bianco avrebbe poco contrasto).
 const ON_ACCENT: Color32 = Color32::from_rgb(26, 15, 5);
-/// Testo selezionato: arancione chiaro con testo quasi nero.
-const SELECTION_BG: Color32 = Color32::from_rgb(253, 186, 116);
-const SELECTION_TEXT: Color32 = Color32::from_rgb(26, 15, 5);
-const OK: Color32 = Color32::from_rgb(21, 128, 61);
-const ERR: Color32 = Color32::from_rgb(185, 28, 28);
-const WARN: Color32 = Color32::from_rgb(161, 98, 7);
-/// Sfondo delle schede (riquadri) sopra il fondo beige.
-const CARD_BG: Color32 = Color32::WHITE;
-/// Pulsante principale non attivo: grigio chiaro con testo leggibile (oltre 4,5:1).
-const DISABLED_FILL: Color32 = Color32::from_rgb(232, 229, 221);
-const DISABLED_TEXT: Color32 = Color32::from_rgb(96, 92, 84);
+/// Sfondo e testo del testo selezionato: arancione scuro con testo quasi bianco
+/// (contrasto circa 5:1; con l'arancione pieno il testo chiaro non si leggeva).
+const SELECTION_BG: Color32 = Color32::from_rgb(170, 74, 12);
+const SELECTION_TEXT: Color32 = Color32::from_rgb(255, 244, 230);
+const OK: Color32 = Color32::from_rgb(64, 185, 120);
+const ERR: Color32 = Color32::from_rgb(235, 87, 87);
+const WARN: Color32 = Color32::from_rgb(240, 205, 70);
+/// Sfondo delle schede (riquadri) sopra il fondo scuro.
+const CARD_BG: Color32 = Color32::from_rgb(28, 28, 32);
+/// Pulsante principale non attivo: grigio scuro con testo leggibile (oltre 4,5:1).
+const DISABLED_FILL: Color32 = Color32::from_rgb(44, 44, 49);
+const DISABLED_TEXT: Color32 = Color32::from_rgb(150, 150, 158);
 
 const VIDEO_FORMATS: [(&str, &str); 3] = [("mp4", "MP4"), ("mkv", "MKV"), ("webm", "WebM")];
 const HEIGHTS: [(u32, &str); 7] = [
@@ -192,6 +194,11 @@ pub struct App {
     tray: Option<crate::tray::Tray>,
     quit_requested: bool,
     show_licenses: bool,
+    show_legal: bool,
+    /// casella di conferma nella finestra delle avvertenze legali
+    terms_check: bool,
+    /// link magnet/.torrent arrivati prima dell'accettazione delle avvertenze
+    held_torrents: Vec<String>,
     tray_failed: bool,
     input: String,
     tx: Sender<Msg>,
@@ -256,6 +263,9 @@ impl App {
             tray: None,
             quit_requested: false,
             show_licenses: false,
+            show_legal: false,
+            terms_check: false,
+            held_torrents: Vec::new(),
             tray_failed: false,
             cfg,
             input: String::new(),
@@ -552,6 +562,7 @@ impl eframe::App for App {
         }
         self.handle_dropped_files(ctx);
         self.licenses_window(ctx);
+        self.legal_window(ctx);
         // le velocità e le percentuali dei torrent si aggiornano anche senza input
         if self.hub.is_running() {
             ctx.request_repaint_after(std::time::Duration::from_millis(500));
@@ -1090,9 +1101,15 @@ impl App {
             {
                 self.show_licenses = !self.show_licenses;
             }
+            if ui
+                .small_button(tr!("Avvertenze legali", "Legal notice"))
+                .clicked()
+            {
+                self.show_legal = !self.show_legal;
+            }
         });
         ui.label(
-            RichText::new(tr!("Usalo solo per contenuti che hai il diritto di scaricare, nel rispetto del copyright e dei termini dei servizi.", "Use it only for content you have the right to download, respecting copyright and the services' terms."))
+            RichText::new(tr!("Usa Dropall solo per contenuti che hai il diritto di scaricare e condividere. Sei tu il responsabile di ciò che scarichi: rispetta il diritto d'autore e i termini dei servizi.", "Use Dropall only for content you have the right to download and share. You are responsible for what you download: respect copyright and the services' terms."))
                 .small()
                 .color(ui.visuals().weak_text_color()),
         );
@@ -1158,11 +1175,11 @@ fn load_logo(ctx: &egui::Context) -> egui::TextureHandle {
 }
 
 fn configure_style(ctx: &egui::Context) {
-    // Interfaccia sempre chiara, anche se il sistema è in modalità scura.
+    // Interfaccia sempre scura, anche se il sistema è in modalità chiara.
     // La barra del titolo, invece, la lascia gestire al sistema: forzarne il
     // tema da qui la rendeva chiara senza pulsanti su Windows al primo avvio
     // e non seguiva il tema di sistema su Linux.
-    ctx.set_theme(egui::ThemePreference::Light);
+    ctx.set_theme(egui::ThemePreference::Dark);
     ctx.options_mut(|o| o.sync_window_theme = false);
     ctx.all_styles_mut(|style| {
         style.spacing.item_spacing = egui::vec2(8.0, 7.0);
@@ -1192,20 +1209,18 @@ fn configure_style(ctx: &egui::Context) {
         style.spacing.interact_size.y = 28.0; // bersagli più comodi da cliccare
 
         let v = &mut style.visuals;
-        v.dark_mode = false;
-        // testo scuro (oltre 14:1 sul fondo), secondario ben leggibile (oltre 6:1)
-        let ink = Color32::from_rgb(31, 29, 26);
-        v.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, ink);
-        v.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, ink);
-        v.widgets.hovered.fg_stroke = egui::Stroke::new(1.5, Color32::BLACK);
-        v.widgets.active.fg_stroke = egui::Stroke::new(1.5, ON_ACCENT);
-        v.widgets.open.fg_stroke = egui::Stroke::new(1.0, ink);
-        v.weak_text_color = Some(Color32::from_rgb(93, 90, 84));
-        v.panel_fill = Color32::from_rgb(244, 242, 238);
-        v.window_fill = Color32::WHITE;
-        // sfondo dei campi di testo e delle barre di avanzamento
-        v.extreme_bg_color = Color32::from_rgb(235, 231, 222);
-        v.faint_bg_color = Color32::from_rgb(238, 235, 229);
+        v.dark_mode = true;
+        // testo chiaro (14:1 sullo sfondo), secondario ben leggibile (8:1)
+        v.widgets.noninteractive.fg_stroke =
+            egui::Stroke::new(1.0, Color32::from_rgb(226, 226, 232));
+        v.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(232, 232, 238));
+        v.widgets.hovered.fg_stroke = egui::Stroke::new(1.5, Color32::WHITE);
+        v.widgets.active.fg_stroke = egui::Stroke::new(1.5, Color32::WHITE);
+        v.weak_text_color = Some(Color32::from_rgb(172, 172, 182));
+        v.panel_fill = Color32::from_rgb(20, 20, 22);
+        v.window_fill = Color32::from_rgb(26, 26, 29);
+        v.extreme_bg_color = Color32::from_rgb(12, 12, 14); // sfondo dei campi e delle barre
+        v.faint_bg_color = Color32::from_rgb(28, 28, 31);
         v.override_text_color = None;
 
         // accento arancione: selezione, barra di avanzamento, link, bordo del campo con focus
@@ -1215,21 +1230,20 @@ fn configure_style(ctx: &egui::Context) {
         v.selection.stroke = egui::Stroke::new(1.0, SELECTION_TEXT);
         v.hyperlink_color = ACCENT_TEXT;
 
-        v.widgets.noninteractive.bg_fill = Color32::WHITE;
-        v.widgets.noninteractive.bg_stroke =
-            egui::Stroke::new(1.0, Color32::from_rgb(220, 215, 204));
-        v.widgets.inactive.bg_fill = Color32::WHITE;
-        // contorno ben visibile su caselle, menu e pulsanti (almeno 3:1 sullo sfondo)
-        v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(130, 125, 115));
-        v.widgets.inactive.weak_bg_fill = Color32::WHITE;
-        v.widgets.hovered.bg_fill = Color32::from_rgb(255, 237, 213);
-        v.widgets.hovered.weak_bg_fill = Color32::from_rgb(255, 237, 213);
-        v.widgets.hovered.bg_stroke = egui::Stroke::new(1.5, ACCENT_TEXT);
+        v.widgets.noninteractive.bg_fill = CARD_BG;
+        v.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(52, 52, 57));
+        v.widgets.inactive.bg_fill = Color32::from_rgb(44, 44, 49);
+        // contorno ben visibile su caselle, menu e pulsanti (prima si confondevano con lo sfondo)
+        v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, Color32::from_rgb(104, 104, 114));
+        v.widgets.inactive.weak_bg_fill = Color32::from_rgb(44, 44, 49);
+        v.widgets.hovered.bg_fill = Color32::from_rgb(58, 52, 48);
+        v.widgets.hovered.weak_bg_fill = Color32::from_rgb(58, 52, 48);
+        v.widgets.hovered.bg_stroke = egui::Stroke::new(1.0, ACCENT);
         v.widgets.active.bg_fill = ACCENT;
         v.widgets.active.weak_bg_fill = ACCENT;
         v.widgets.active.bg_stroke = egui::Stroke::new(1.0, ACCENT_TEXT);
-        v.widgets.open.bg_fill = Color32::from_rgb(255, 237, 213);
-        v.widgets.open.weak_bg_fill = Color32::from_rgb(255, 237, 213);
+        v.widgets.open.bg_fill = Color32::from_rgb(58, 52, 48);
+        v.widgets.open.weak_bg_fill = Color32::from_rgb(58, 52, 48);
 
         let r = egui::CornerRadius::same(8);
         v.widgets.noninteractive.corner_radius = r;
@@ -1264,6 +1278,11 @@ fn progress_row(ui: &mut egui::Ui, fraction: f32) {
 impl App {
     /// Aggiunge link magnet, indirizzi e file .torrent ai torrent.
     fn add_torrent_inputs(&mut self, lines: Vec<String>) {
+        if !self.cfg.terms_accepted {
+            // si parte solo dopo aver letto e accettato le avvertenze legali
+            self.held_torrents.extend(lines);
+            return;
+        }
         self.hub.add_lines(lines, self.cfg.torrent_dir.clone());
     }
 

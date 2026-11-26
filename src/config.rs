@@ -43,6 +43,8 @@ pub struct Config {
     pub torrent_up_kbps: u32,
     /// area di notifica: minimizzando la finestra si nasconde lì e i download continuano
     pub tray: bool,
+    /// l'utente ha letto e accettato le avvertenze legali (si chiede al primo avvio)
+    pub terms_accepted: bool,
 }
 
 impl Default for Config {
@@ -61,6 +63,7 @@ impl Default for Config {
             torrent_seed: false,
             torrent_up_kbps: 0,
             tray: true,
+            terms_accepted: false,
             dm_connections: 8,
             speed_limit_kbps: 0,
             out_dir,

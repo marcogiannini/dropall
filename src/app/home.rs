@@ -29,20 +29,20 @@ impl Kind {
         }
     }
 
-    /// (sfondo, testo): tinte chiare con testo scuro, contrasto oltre 7:1.
+    /// (sfondo, testo): tinte scure con testo chiaro, contrasto oltre 7:1.
     fn colors(self) -> (Color32, Color32) {
         match self {
             Kind::Media => (
-                Color32::from_rgb(255, 237, 213),
-                Color32::from_rgb(124, 45, 18),
+                Color32::from_rgb(54, 36, 22),
+                Color32::from_rgb(253, 186, 116),
             ),
             Kind::File => (
-                Color32::from_rgb(220, 252, 231),
-                Color32::from_rgb(20, 83, 45),
+                Color32::from_rgb(25, 48, 34),
+                Color32::from_rgb(134, 239, 172),
             ),
             Kind::Torrent => (
-                Color32::from_rgb(219, 234, 254),
-                Color32::from_rgb(30, 58, 138),
+                Color32::from_rgb(27, 38, 58),
+                Color32::from_rgb(147, 197, 253),
             ),
         }
     }
@@ -266,7 +266,7 @@ impl App {
             ui.add_space(4.0);
             let ready = self.tools.ytdlp.is_some() && !self.tools.busy;
             let media_blocked = has_media && (!ready || self.running);
-            let enabled = has_input && !media_blocked;
+            let enabled = has_input && !media_blocked && self.cfg.terms_accepted;
             ui.horizontal(|ui| {
                 let (fill, text) = if enabled {
                     (ACCENT, ON_ACCENT)
@@ -337,6 +337,9 @@ impl App {
 
     /// Manda ogni riga al motore giusto.
     fn submit(&mut self, ctx: &egui::Context) {
+        if !self.cfg.terms_accepted {
+            return;
+        }
         let lines = lines_of(&self.home.input);
         let (mut media, mut files, mut tor) = (Vec::new(), Vec::new(), Vec::new());
         for l in lines {

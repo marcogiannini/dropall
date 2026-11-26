@@ -14,6 +14,8 @@ Dropall è un programma gratuito e semplice per scaricare ciò che ti serve da i
 - **Qualsiasi file** da un indirizzo web, più veloce grazie a più connessioni insieme, con code che puoi pianificare.
 - **Torrent**: incolla un link magnet, apri un file `.torrent` oppure clicca un link magnet nel browser.
 
+> **Usalo con responsabilità.** Dropall è uno strumento neutro: non ospita né distribuisce nulla. Scarica e condividi solo contenuti che hai il diritto di scaricare: tuoi, di pubblico dominio, con una licenza che lo permette o con il permesso del titolare. Sei tu il responsabile di ciò che scarichi. Vedi le [Avvertenze legali](#avvertenze-legali).
+
 Funziona su **Windows, Linux e macOS**, è piccolo e leggero (l'AppImage per Linux pesa circa 4 MB), parla **italiano o inglese** in base al tuo sistema e si aggiorna da solo.
 
 <table>
@@ -35,7 +37,8 @@ Funziona su **Windows, Linux e macOS**, è piccolo e leggero (l'AppImage per Lin
 - **Scarica anche mentre non lo vedi.** Minimizza Dropall e va nell'area di notifica: video, file e torrent continuano a scaricare.
 - **Sai sempre a che punto sei:** ogni barra di avanzamento mostra la percentuale.
 - **Un solo campo per tutto.** Niente più schede: incolli un link qualsiasi e Dropall capisce da solo se è un video, un file o un torrent, poi mostra solo le opzioni che servono. Tutti i download stanno in un'unica lista con i filtri *Tutti / In corso / Completati*.
-- **Un aspetto chiaro.** L'interfaccia ora è chiara, con accento arancione e contrasto alto, e funziona sempre con gli screen reader.
+- **Aspetto scuro e flat.** Interfaccia scura con accento arancione e contrasto alto, una nuova icona flat e tutto funziona sempre con gli screen reader.
+- **Avvertenze legali.** Al primo avvio Dropall chiede di leggere e accettare un breve avviso sull'uso responsabile; si può rileggere in qualsiasi momento dal fondo della finestra. Vedi le [Avvertenze legali](#avvertenze-legali).
 - **Nuovo nome e nuova icona:** il programma ora si chiama Dropall.
 - **Installer per Windows** (`Dropall-Setup-windows-x86_64.exe`): si installa solo per il tuo utente, senza diritti di amministratore, con voce nel menu Start e disinstallatore. L'`.exe` portatile resta disponibile.
 - **Download manager** per qualsiasi file `http(s)`: fino a 16 connessioni per file, code, pianificatore e un limite di velocità condivisibile.
@@ -116,7 +119,7 @@ Spotify cifra l'audio (DRM) e yt-dlp non lo scarica. Dropall legge soltanto i
   può smettere di funzionare finché non si aggiorna Dropall.
 
 > Usa Dropall solo per contenuti che hai il diritto di scaricare e nel rispetto
-> del copyright e dei termini di servizio delle piattaforme.
+> del copyright e dei termini di servizio delle piattaforme. Vedi le [Avvertenze legali](#avvertenze-legali).
 
 ## Installazione
 
@@ -246,6 +249,7 @@ Per forzare la lingua dell'interfaccia (prove): `DROPALL_LANG=it` oppure `DROPAL
 | `src/app.rs` | interfaccia grafica (egui) |
 | `src/downloader.rs` | costruisce i comandi yt-dlp, legge l'avanzamento, annulla |
 | `src/dm.rs` | motore del download manager: più connessioni, code, pianificatore, limite |
+| `src/app/legal.rs` | finestra delle avvertenze legali (al primo avvio e consultabile) |
 | `src/app/home.rs` | schermata principale: campo intelligente, filtri, lista unica e pannello impostazioni |
 | `src/app/dm_tab.rs` | righe dei file, code, pianificatore e limite di velocità |
 | `src/app/torrent_tab.rs` | righe dei torrent e opzioni |
@@ -277,6 +281,41 @@ Per forzare la lingua dell'interfaccia (prove): `DROPALL_LANG=it` oppure `DROPAL
   Rosetta); se hai Homebrew (`brew install ffmpeg`) viene usato quello.
 - **Linux senza AppImage** (binario avviato a mano): funziona, ma l'app non
   può sostituire se stessa; mostra solo il link alla nuova release.
+
+## Avvertenze legali
+
+Questa sezione è un'informazione per gli utenti, **non una consulenza legale**. Se hai bisogno di
+certezze sulla tua situazione, chiedi a un avvocato del tuo Paese.
+
+**Cos'è Dropall.** Uno strumento di download libero e open source. Non ospita, non cerca, non
+indicizza e non distribuisce contenuti, non ha un catalogo e non aggira il DRM né altre misure di
+protezione tecnica. Scarica solo gli indirizzi che *tu* gli indichi, usando
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) (video e musica), il normale HTTP(S) (file) e
+[libtorrent](https://github.com/arvidn/libtorrent) (BitTorrent).
+
+**Cosa ci si aspetta da te.**
+
+- Scarica e condividi solo contenuti che hai il diritto di scaricare: tuoi, di pubblico dominio,
+  con una licenza che lo permette (per esempio Creative Commons) o con il permesso del titolare dei diritti.
+- Rispetta il diritto d'autore e i termini di servizio dei siti che usi. YouTube, Spotify e altre
+  piattaforme possono vietare il download nei loro termini: quei termini vincolano te, non Dropall.
+- Spotify: Dropall legge solo i dati pubblici del link (titolo, artista) e cerca lo stesso brano su
+  YouTube. Questo non rende lecito scaricare opere protette.
+- Torrent: mentre scarichi condividi anche con gli altri, e il tuo indirizzo IP è visibile agli altri
+  partecipanti. Dropall non è un servizio di anonimato. Nelle impostazioni puoi limitare o disattivare la condivisione.
+- Le leggi cambiano da Paese a Paese (eccezioni per la copia privata, sanzioni e così via). Informati su quelle che valgono per te.
+
+**Cosa fanno gli autori.** Non approvano la violazione del diritto d'autore, non danno supporto per
+scaricare da fonti illecite e non aggiungono funzioni pensate per specifici siti pirata. Il software è
+fornito «così com'è», senza garanzie di alcun tipo; nei limiti consentiti dalla legge gli autori non
+rispondono di danni o conseguenze legali derivanti dal suo uso (vedi la licenza, sezioni 15 e 16).
+
+**Nell'app.** Al primo avvio devi leggere l'avviso e confermare che userai Dropall solo per contenuti
+che hai il diritto di scaricare; fino ad allora i download sono disattivati. L'avviso resta consultabile da
+*Avvertenze legali* in fondo alla finestra.
+
+**Titolari dei diritti.** Dropall non ospita contenuti, quindi in questo repository non c'è nulla da
+rimuovere. Se ritieni che il codice stesso violi i tuoi diritti, apri una segnalazione (issue) nel repository.
 
 ## Licenza
 
