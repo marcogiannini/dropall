@@ -84,21 +84,30 @@ pub fn kind_tag(ui: &mut egui::Ui, kind: Kind) {
         });
 }
 
+/// A che punto è un download: ancora da fare, finito bene o finito male.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Class {
+    Active,
+    Done,
+    Failed,
+}
+
+/// Filtro dello storico (i download in corso stanno nel loro pannello).
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum Filter {
     #[default]
     All,
-    Active,
     Done,
+    Failed,
 }
 
 impl Filter {
-    /// `done`: l'elemento è finito (gli errori restano tra quelli "in corso", da gestire).
-    pub fn accepts(self, done: bool) -> bool {
+    /// Nello storico finiscono solo i download conclusi, con successo o con un errore.
+    pub fn accepts(self, c: Class) -> bool {
         match self {
-            Filter::All => true,
-            Filter::Active => !done,
-            Filter::Done => done,
+            Filter::All => c != Class::Active,
+            Filter::Done => c == Class::Done,
+            Filter::Failed => c == Class::Failed,
         }
     }
 }
@@ -469,19 +478,60 @@ impl App {
     fn list_section(&mut self, ui: &mut egui::Ui) {
         let snap = self.dm.snapshot();
         let tors = self.hub.snapshot();
-        let media_done = |s: super::JobState| s == super::JobState::Done;
-        let tor_done = |s: TState| matches!(s, TState::Finished | TState::Seeding);
-        let total = self.jobs.len() + snap.items.len() + tors.len();
-        let done = self.jobs.iter().filter(|j| media_done(j.state)).count()
-            + snap.items.iter().filter(|i| i.state == State::Done).count()
-            + tors.iter().filter(|t| tor_done(t.state)).count();
-        let active = total - done;
+        let tor_class = |s: TState| match s {
+            TState::Finished | TState::Seeding => Class::Done,
+            TState::Error => Class::Failed,
+            _ => Class::Active,
+        };
+        let dm_class = |s: State| match s {
+            State::Done => Class::Done,
+            State::Failed => Class::Failed,
+            _ => Class::Active,
+        };
+        let mut all: Vec<Class> = self.jobs.iter().map(|j| super::job_class(j.state)).collect();
+        all.extend(snap.items.iter().map(|i| dm_class(i.state)));
+        all.extend(tors.iter().map(|t| tor_class(t.state)));
+        let count = |c: Class| all.iter().filter(|x| **x == c).count();
+        let (active, done, failed) = (count(Class::Active), count(Class::Done), count(Class::Failed));
 
+        if all.is_empty() {
+            empty_state(
+                ui,
+                tr!("Ancora nessun download", "No downloads yet"),
+                tr!(
+                    "Incolla un link qui sopra: Dropall capisce da solo se è un video, un file o un torrent.",
+                    "Paste a link above: Dropall works out by itself whether it is a video, a file or a torrent."
+                ),
+            );
+            return;
+        }
+
+        // 1. avanzamento: subito sotto il pulsante Scarica
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(tr!("In corso", "In progress")).size(17.0).strong());
+            ui.label(RichText::new(format!("({active})")).size(15.0).color(super::ACCENT_TEXT));
+        });
+        ui.add_space(4.0);
+        let shown = self.rows(ui, &snap, &tors, |c| c == Class::Active, false);
+        if shown == 0 {
+            ui.label(
+                RichText::new(tr!(
+                    "Nessun download in corso.",
+                    "Nothing downloading right now."
+                ))
+                .color(ui.visuals().weak_text_color()),
+            );
+        }
+        ui.add_space(14.0);
+
+        // 2. storico: finiti bene o male, con i filtri
         ui.horizontal_wrapped(|ui| {
+            ui.label(RichText::new(tr!("Storico", "History")).size(17.0).strong());
+            ui.add_space(6.0);
             for (f, label, n) in [
-                (Filter::All, tr!("Tutti", "All"), total),
-                (Filter::Active, tr!("In corso", "In progress"), active),
+                (Filter::All, tr!("Tutti", "All"), done + failed),
                 (Filter::Done, tr!("Completati", "Completed"), done),
+                (Filter::Failed, tr!("Con errori", "With errors"), failed),
             ] {
                 let selected = self.home.filter == f;
                 let text = RichText::new(format!("  {label} ({n})  "))
@@ -501,60 +551,69 @@ impl App {
             );
         });
         ui.add_space(8.0);
-
-        if total == 0 {
+        let filter = self.home.filter;
+        let shown = self.rows(ui, &snap, &tors, |c| filter.accepts(c), true);
+        if shown == 0 {
             empty_state(
                 ui,
-                tr!("Ancora nessun download", "No downloads yet"),
+                tr!("Storico vuoto", "Nothing in the history"),
                 tr!(
-                    "Incolla un link qui sopra: Dropall capisce da solo se è un video, un file o un torrent.",
-                    "Paste a link above: Dropall works out by itself whether it is a video, a file or a torrent."
+                    "Qui compaiono i download finiti, o quelli andati male.",
+                    "Finished downloads, and those that went wrong, show up here."
                 ),
             );
-            return;
         }
-        let filter = self.home.filter;
-        let mut shown = 0;
+    }
 
-        // video e musica
-        shown += self
+    /// Disegna i download che passano il filtro: prima video e musica, poi torrent, poi file.
+    /// Restituisce quanti ne ha mostrati.
+    fn rows(
+        &mut self,
+        ui: &mut egui::Ui,
+        snap: &crate::dm::Snapshot,
+        tors: &[crate::torrent::TorrentItem],
+        wanted: impl Fn(Class) -> bool,
+        history: bool,
+    ) -> usize {
+        let mut shown = self
             .jobs
             .iter()
-            .filter(|j| filter.accepts(media_done(j.state)))
+            .filter(|j| wanted(super::job_class(j.state)))
             .count();
-        self.queue(ui, filter);
-        ui.add_space(6.0);
-
-        // torrent
-        for it in tors.iter().filter(|t| filter.accepts(tor_done(t.state))) {
+        self.queue(ui, &wanted, history);
+        if shown > 0 {
+            ui.add_space(6.0);
+        }
+        for it in tors.iter().filter(|t| {
+            wanted(match t.state {
+                TState::Finished | TState::Seeding => Class::Done,
+                TState::Error => Class::Failed,
+                _ => Class::Active,
+            })
+        }) {
             shown += 1;
             self.torrent_row(ui, it);
             ui.add_space(6.0);
         }
-
         // file, coda per coda (le frecce su/giù spostano dentro la propria coda)
         for q in &snap.queues {
             let mine: Vec<&crate::dm::Item> =
                 snap.items.iter().filter(|i| i.queue == q.id).collect();
             let last = mine.len().saturating_sub(1);
             for (n, it) in mine.iter().enumerate() {
-                if filter.accepts(it.state == State::Done) {
+                let c = match it.state {
+                    State::Done => Class::Done,
+                    State::Failed => Class::Failed,
+                    _ => Class::Active,
+                };
+                if wanted(c) {
                     shown += 1;
                     self.dm_row(ui, it, n == 0, n == last);
                     ui.add_space(6.0);
                 }
             }
         }
-        if shown == 0 {
-            empty_state(
-                ui,
-                tr!("Nessun download qui", "Nothing here"),
-                tr!(
-                    "Cambia filtro per vedere gli altri download.",
-                    "Change the filter to see the other downloads."
-                ),
-            );
-        }
+        shown
     }
 
     /// Pannello delle impostazioni: limite di velocità, torrent e code dei file.
@@ -622,8 +681,10 @@ mod tests {
 
     #[test]
     fn filters_split_done_from_the_rest() {
-        assert!(Filter::All.accepts(true) && Filter::All.accepts(false));
-        assert!(Filter::Active.accepts(false) && !Filter::Active.accepts(true));
-        assert!(Filter::Done.accepts(true) && !Filter::Done.accepts(false));
+        // nello storico non entra mai ciò che è ancora in corso
+        assert!(!Filter::All.accepts(Class::Active));
+        assert!(Filter::All.accepts(Class::Done) && Filter::All.accepts(Class::Failed));
+        assert!(Filter::Done.accepts(Class::Done) && !Filter::Done.accepts(Class::Failed));
+        assert!(Filter::Failed.accepts(Class::Failed) && !Filter::Failed.accepts(Class::Done));
     }
 }

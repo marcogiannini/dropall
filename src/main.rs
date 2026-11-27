@@ -9,6 +9,7 @@ mod downloader;
 mod i18n;
 mod ipc;
 mod net;
+mod notify;
 mod selfupdate;
 mod spotify;
 mod tools;

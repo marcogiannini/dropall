@@ -33,10 +33,13 @@ It runs on **Windows, Linux and macOS**, it is small and lightweight (the Linux 
 
 ## What's new
 
+- **A pop-up when a download finishes.** Dropall shows a system notification (a toast on Windows, a banner in the Notification Center on macOS, a desktop notification on Linux) when a video, file or torrent is done, or has failed, even while the window is minimized to the tray. If several finish together you get a single notice. You can turn it off with *Notify me when a download is finished* at the bottom of the window.
+- **Progress right under Download.** Active downloads now sit in their own “In progress” panel just below the Download button, and finished ones move to a “History” list with *All / Completed / With errors* filters.
+- **A gentle legal reminder.** After you have accepted the legal notice, Dropall shows it again every 50 launches, with a simple “Got it” button.
 - **Torrents have arrived.** Torrents work like everything else: paste magnet links or `.torrent` addresses, open `.torrent` files from your computer (or drag them onto the window), or click a magnet link in your browser and Dropall takes care of it. Powered by [libtorrent](https://github.com/arvidn/libtorrent).
 - **Keep downloading while it's out of the way.** Minimize Dropall and it tucks itself into the system tray; videos, files and torrents keep downloading.
 - **You always know how far along you are:** every progress bar now shows its percentage.
-- **One box for everything.** No more tabs: paste any link and Dropall works out by itself whether it is a video, a file or a torrent, then shows only the options that matter. All your downloads sit in a single list with *All / In progress / Completed* filters.
+- **One box for everything.** No more tabs: paste any link and Dropall works out by itself whether it is a video, a file or a torrent, then shows only the options that matter. Downloads in progress sit right under the Download button, with a history of finished ones below.
 - **A dark, flat look.** Dark interface with an orange accent and high contrast, a new flat icon, and everything still works with screen readers.
 - **Legal notice.** On first launch Dropall asks you to read and accept a short notice about responsible use; you can read it again any time from the bottom of the window. See [Legal notice](#legal-notice).
 - **A new name and icon:** the program is now called Dropall.
@@ -249,7 +252,7 @@ To force the interface language (for testing): `DROPALL_LANG=it` or `DROPALL_LAN
 | `src/app.rs` | graphical interface (egui) |
 | `src/downloader.rs` | builds the yt-dlp commands, reads progress, cancels |
 | `src/dm.rs` | download manager engine: multi-connection, queues, scheduler, speed limit |
-| `src/app/legal.rs` | legal notice window (first launch and on demand) |
+| `src/app/legal.rs` | legal notice window (first launch, on demand and every 50 launches) |
 | `src/app/home.rs` | main screen: the smart link box, filters, the single list and the settings panel |
 | `src/app/dm_tab.rs` | file rows, queues, scheduler and speed limit |
 | `src/app/torrent_tab.rs` | torrent rows and options |
@@ -257,6 +260,7 @@ To force the interface language (for testing): `DROPALL_LANG=it` or `DROPALL_LAN
 | `native/gt.cpp` | small C++ layer over libtorrent |
 | `third_party/libtorrent` | libtorrent source (BSD-3-Clause), see *License* |
 | `src/tray.rs` | system tray icon |
+| `src/notify.rs` | system notifications when a download finishes |
 | `src/ipc.rs` | single instance: forwards magnet links and `.torrent` files to the running app |
 | `src/tools.rs` | downloads/updates yt-dlp, Deno, ffmpeg |
 | `src/spotify.rs` | reads title/artist from Spotify links |
@@ -310,7 +314,7 @@ authors are not liable for damage or legal consequences arising from its use (se
 
 **In the app.** On first launch you must read the notice and confirm that you will use Dropall only for
 content you have the right to download; until then downloads are disabled. The notice stays available from
-*Legal notice* at the bottom of the window.
+*Legal notice* at the bottom of the window, and it pops up again every 50 launches as a reminder.
 
 **Rights holders.** Dropall hosts no content, so there is nothing to take down in this repository.
 If you believe the code itself infringes your rights, open an issue on the repository.

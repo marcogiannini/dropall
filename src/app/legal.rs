@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Avvertenze legali: finestra al primo avvio (con conferma) e consultabile in ogni momento.
+//! Avvertenze legali: finestra al primo avvio (con conferma), consultabile in ogni momento e riproposta ogni 50 avvii.
 use super::App;
 use crate::tr;
 use eframe::egui::{self, RichText};
@@ -59,6 +59,15 @@ fn points() -> [(&'static str, &'static str); 7] {
     ]
 }
 
+/// Ogni quanti avvii si ripete l'avviso legale.
+pub(super) const REMINDER_EVERY: u32 = 50;
+
+/// Vero all'avvio numero 50, 100, 150…, quando l'avviso è già stato accettato
+/// (al primo avvio compare comunque quello obbligatorio).
+pub(super) fn reminder_due(terms_accepted: bool, launches: u32) -> bool {
+    terms_accepted && launches > 0 && launches % REMINDER_EVERY == 0
+}
+
 impl App {
     /// Mostra la finestra: obbligatoria finché non è accettata, poi consultabile dal piè di pagina.
     pub(super) fn legal_window(&mut self, ctx: &egui::Context) {
@@ -67,6 +76,7 @@ impl App {
             return;
         }
         let mut open = true;
+        let mut dismissed = false;
         let mut win = egui::Window::new(tr!("Avvertenze legali", "Legal notice"))
             .collapsible(false)
             .resizable(false)
@@ -77,6 +87,16 @@ impl App {
         }
         win.show(ctx, |ui| {
             ui.set_max_width(560.0);
+            if self.legal_reminder && !must {
+                ui.label(
+                    RichText::new(tr!(
+                        "Promemoria: rileggi queste avvertenze ogni 50 avvii.",
+                        "Reminder: these notes are shown again every 50 launches."
+                    ))
+                    .color(super::ACCENT_TEXT),
+                );
+                ui.add_space(4.0);
+            }
             ui.label(
                 RichText::new(tr!(
                     "Prima di usare Dropall, leggi con attenzione.",
@@ -92,6 +112,19 @@ impl App {
                     ui.label(body);
                 }
             });
+            if !must {
+                ui.add_space(10.0);
+                let label = tr!("Ho capito", "Got it");
+                let r = ui.add(
+                    egui::Button::new(RichText::new(label).strong().color(super::ON_ACCENT))
+                        .fill(super::ACCENT)
+                        .min_size(egui::vec2(160.0, 36.0)),
+                );
+                r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, label));
+                if r.clicked() {
+                    dismissed = true;
+                }
+            }
             if must {
                 ui.add_space(10.0);
                 ui.checkbox(
@@ -131,8 +164,26 @@ impl App {
                 }
             }
         });
-        if !must && !open {
+        if !must && (!open || dismissed) {
             self.show_legal = false;
+            self.legal_reminder = false;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::reminder_due;
+
+    #[test]
+    fn reminder_comes_every_fifty_launches() {
+        assert!(!reminder_due(true, 0));
+        assert!(!reminder_due(true, 1));
+        assert!(!reminder_due(true, 49));
+        assert!(reminder_due(true, 50));
+        assert!(!reminder_due(true, 51));
+        assert!(reminder_due(true, 100));
+        // finché l'avviso obbligatorio non è accettato non serve il promemoria
+        assert!(!reminder_due(false, 50));
     }
 }

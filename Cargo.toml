@@ -1,6 +1,6 @@
 [package]
 name = "dropall"
-version = "0.7.0"
+version = "0.9.0"
 edition = "2021"
 rust-version = "1.85"
 description = "Universal downloader: video and music from YouTube and Spotify, plus a download manager for any file"
@@ -36,6 +36,8 @@ self-replace = "1"
 zip = { version = "9", default-features = false, features = ["deflate"] }
 sys-locale = "0.3.2"
 chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+# avvisi di sistema (toast Windows, Centro notifiche macOS, notifiche D-Bus su Linux)
+notify-rust = "4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 ksni = { version = "0.3", features = ["blocking"] }

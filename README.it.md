@@ -33,10 +33,13 @@ Funziona su **Windows, Linux e macOS**, è piccolo e leggero (l'AppImage per Lin
 
 ## Novità
 
+- **Un avviso quando un download finisce.** Dropall mostra una notifica di sistema (un avviso su Windows, un banner nel Centro notifiche su macOS, una notifica del desktop su Linux) quando un video, un file o un torrent è completato o non è riuscito, anche con la finestra nascosta nell'area di notifica. Se ne finiscono più d'uno insieme ricevi un solo avviso. Si disattiva con la casella *Avvisami quando un download è finito* in fondo alla finestra.
+- **L'avanzamento subito sotto Scarica.** I download attivi stanno in un pannello «In corso» appena sotto il pulsante Scarica; quando finiscono passano in uno «Storico» con i filtri *Tutti / Completati / Con errori*.
+- **Un promemoria legale discreto.** Dopo aver accettato le avvertenze, Dropall le mostra di nuovo ogni 50 avvii, con un semplice pulsante «Ho capito».
 - **Arrivano i torrent.** I torrent funzionano come tutto il resto: incolla link magnet o indirizzi `.torrent`, apri i file `.torrent` dal computer (o trascinali sulla finestra), oppure clicca un link magnet nel browser e Dropall se ne occupa. Funziona con [libtorrent](https://github.com/arvidn/libtorrent).
 - **Scarica anche mentre non lo vedi.** Minimizza Dropall e va nell'area di notifica: video, file e torrent continuano a scaricare.
 - **Sai sempre a che punto sei:** ogni barra di avanzamento mostra la percentuale.
-- **Un solo campo per tutto.** Niente più schede: incolli un link qualsiasi e Dropall capisce da solo se è un video, un file o un torrent, poi mostra solo le opzioni che servono. Tutti i download stanno in un'unica lista con i filtri *Tutti / In corso / Completati*.
+- **Un solo campo per tutto.** Niente più schede: incolli un link qualsiasi e Dropall capisce da solo se è un video, un file o un torrent, poi mostra solo le opzioni che servono. I download in corso stanno subito sotto il pulsante Scarica, con lo storico di quelli finiti più sotto.
 - **Aspetto scuro e flat.** Interfaccia scura con accento arancione e contrasto alto, una nuova icona flat e tutto funziona sempre con gli screen reader.
 - **Avvertenze legali.** Al primo avvio Dropall chiede di leggere e accettare un breve avviso sull'uso responsabile; si può rileggere in qualsiasi momento dal fondo della finestra. Vedi le [Avvertenze legali](#avvertenze-legali).
 - **Nuovo nome e nuova icona:** il programma ora si chiama Dropall.
@@ -249,7 +252,7 @@ Per forzare la lingua dell'interfaccia (prove): `DROPALL_LANG=it` oppure `DROPAL
 | `src/app.rs` | interfaccia grafica (egui) |
 | `src/downloader.rs` | costruisce i comandi yt-dlp, legge l'avanzamento, annulla |
 | `src/dm.rs` | motore del download manager: più connessioni, code, pianificatore, limite |
-| `src/app/legal.rs` | finestra delle avvertenze legali (al primo avvio e consultabile) |
+| `src/app/legal.rs` | finestra delle avvertenze legali (al primo avvio, su richiesta e ogni 50 avvii) |
 | `src/app/home.rs` | schermata principale: campo intelligente, filtri, lista unica e pannello impostazioni |
 | `src/app/dm_tab.rs` | righe dei file, code, pianificatore e limite di velocità |
 | `src/app/torrent_tab.rs` | righe dei torrent e opzioni |
@@ -257,6 +260,7 @@ Per forzare la lingua dell'interfaccia (prove): `DROPALL_LANG=it` oppure `DROPAL
 | `native/gt.cpp` | piccolo strato C++ su libtorrent |
 | `third_party/libtorrent` | sorgenti di libtorrent (BSD-3-Clause), vedi *Licenza* |
 | `src/tray.rs` | icona nell'area di notifica |
+| `src/notify.rs` | avvisi di sistema quando un download finisce |
 | `src/ipc.rs` | istanza unica: passa link magnet e file `.torrent` all'app già aperta |
 | `src/tools.rs` | scarica/aggiorna yt-dlp, Deno, ffmpeg |
 | `src/spotify.rs` | legge titolo/artista dai link Spotify |
@@ -312,7 +316,7 @@ rispondono di danni o conseguenze legali derivanti dal suo uso (vedi la licenza,
 
 **Nell'app.** Al primo avvio devi leggere l'avviso e confermare che userai Dropall solo per contenuti
 che hai il diritto di scaricare; fino ad allora i download sono disattivati. L'avviso resta consultabile da
-*Avvertenze legali* in fondo alla finestra.
+*Avvertenze legali* in fondo alla finestra, e ricompare ogni 50 avvii come promemoria.
 
 **Titolari dei diritti.** Dropall non ospita contenuti, quindi in questo repository non c'è nulla da
 rimuovere. Se ritieni che il codice stesso violi i tuoi diritti, apri una segnalazione (issue) nel repository.

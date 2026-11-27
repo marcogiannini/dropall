@@ -93,6 +93,15 @@ enum JobState {
     Failed,
 }
 
+/// In quale gruppo della schermata cade un video o una canzone.
+fn job_class(s: JobState) -> home::Class {
+    match s {
+        JobState::Waiting | JobState::Running => home::Class::Active,
+        JobState::Done => home::Class::Done,
+        JobState::Failed => home::Class::Failed,
+    }
+}
+
 struct JobUi {
     id: usize,
     label: String,
@@ -185,7 +194,7 @@ pub struct App {
     dm: dm::Manager,
     dm_ui: dm_tab::DmUi,
     /// ultime impostazioni del download manager salvate su disco
-    dm_saved: (PathBuf, u8, u32, PathBuf, bool, u32, bool),
+    dm_saved: (PathBuf, u8, u32, PathBuf, bool, u32, bool, bool),
     hub: Arc<crate::torrent::Hub>,
     tor_ui: torrent_tab::TorUi,
     /// link magnet e file .torrent arrivati dalla riga di comando o da un'altra istanza
@@ -195,6 +204,10 @@ pub struct App {
     quit_requested: bool,
     show_licenses: bool,
     show_legal: bool,
+    /// la finestra è il promemoria periodico, non una consultazione volontaria
+    legal_reminder: bool,
+    /// ricorda gli stati dei download per sapere quando ne finisce uno
+    watcher: crate::notify::Watcher,
     /// casella di conferma nella finestra delle avvertenze legali
     terms_check: bool,
     /// link magnet/.torrent arrivati prima dell'accettazione delle avvertenze
@@ -229,7 +242,10 @@ impl App {
         configure_style(&cc.egui_ctx);
         let logo = load_logo(&cc.egui_ctx);
         let (tx, rx) = channel();
-        let cfg = Config::load();
+        let mut cfg = Config::load();
+        cfg.launch_count = cfg.launch_count.saturating_add(1);
+        cfg.save();
+        let legal_due = legal::reminder_due(cfg.terms_accepted, cfg.launch_count);
         let dm = {
             let ctx = cc.egui_ctx.clone();
             let path = tools::project_dirs().map(|d| d.config_dir().join("downloads.json"));
@@ -256,6 +272,7 @@ impl App {
                 cfg.torrent_seed,
                 cfg.torrent_up_kbps,
                 cfg.tray,
+                cfg.notify_done,
             ),
             hub,
             tor_ui: torrent_tab::TorUi::default(),
@@ -263,7 +280,9 @@ impl App {
             tray: None,
             quit_requested: false,
             show_licenses: false,
-            show_legal: false,
+            show_legal: legal_due,
+            legal_reminder: legal_due,
+            watcher: crate::notify::Watcher::default(),
             terms_check: false,
             held_torrents: Vec::new(),
             tray_failed: false,
@@ -538,6 +557,7 @@ impl eframe::App for App {
         }
         self.poll_incoming(ctx);
         self.poll_tray(ctx);
+        self.poll_finished();
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
@@ -552,6 +572,7 @@ impl eframe::App for App {
             self.cfg.torrent_seed,
             self.cfg.torrent_up_kbps,
             self.cfg.tray,
+            self.cfg.notify_done,
         );
         if now != self.dm_saved {
             if now.2 != self.dm_saved.2 {
@@ -979,11 +1000,11 @@ impl App {
         });
     }
 
-    fn queue(&self, ui: &mut egui::Ui, filter: home::Filter) {
+    fn queue(&self, ui: &mut egui::Ui, wanted: impl Fn(home::Class) -> bool, history: bool) {
         let shown: Vec<&JobUi> = self
             .jobs
             .iter()
-            .filter(|j| filter.accepts(j.state == JobState::Done))
+            .filter(|j| wanted(job_class(j.state)))
             .collect();
         if shown.is_empty() {
             return;
@@ -991,7 +1012,7 @@ impl App {
         card(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(RichText::new(tr!("Video e musica", "Video & music")).strong());
-                if self.running {
+                if self.running && !history {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if ui.button(tr!("Annulla", "Cancel")).clicked() {
                             self.cancel.store(true, Ordering::Relaxed);
@@ -1047,6 +1068,50 @@ impl App {
         });
     }
 
+    /// Controlla se qualche download è appena finito e, se l'utente vuole, lo dice con un avviso di sistema.
+    fn poll_finished(&mut self) {
+        use crate::notify::Phase;
+        use crate::torrent::TState;
+        let mut now: Vec<(String, Phase, String)> = Vec::new();
+        for j in &self.jobs {
+            let phase = match j.state {
+                JobState::Waiting | JobState::Running => Phase::Active,
+                JobState::Done => Phase::Done,
+                // un annullamento chiesto dall'utente non è un errore da segnalare
+                JobState::Failed if j.detail == tr!("Annullato", "Cancelled") => Phase::Quiet,
+                JobState::Failed => Phase::Failed,
+            };
+            now.push((format!("m{}", j.id), phase, j.label.clone()));
+        }
+        for i in &self.dm.snapshot().items {
+            let phase = match i.state {
+                dm::State::Done => Phase::Done,
+                dm::State::Failed => Phase::Failed,
+                _ => Phase::Active,
+            };
+            now.push((format!("f{}", i.id), phase, i.file_name.clone()));
+        }
+        for t in self.hub.snapshot() {
+            let phase = match t.state {
+                TState::Finished | TState::Seeding => Phase::Done,
+                TState::Error => Phase::Failed,
+                // la verifica dei file dopo un riavvio non è un nuovo download
+                TState::Checking => Phase::Quiet,
+                _ => Phase::Active,
+            };
+            now.push((format!("t{}", t.hash), phase, t.name.clone()));
+        }
+        let finished = self.watcher.update(now);
+        if !self.cfg.notify_done || !self.cfg.terms_accepted {
+            return;
+        }
+        for (names, failed) in [(&finished.done, false), (&finished.failed, true)] {
+            if let Some((title, body)) = crate::notify::message(names, failed) {
+                crate::notify::show(title, body);
+            }
+        }
+    }
+
     fn log_view(&self, ui: &mut egui::Ui) {
         if self.log.is_empty() {
             return;
@@ -1089,6 +1154,13 @@ impl App {
         }
         ui.horizontal_wrapped(|ui| {
             ui.checkbox(
+                &mut self.cfg.notify_done,
+                tr!(
+                    "Avvisami quando un download è finito",
+                    "Notify me when a download is finished"
+                ),
+            );
+            ui.checkbox(
                 &mut self.cfg.tray,
                 tr!(
                     "Minimizza nell'area di notifica (i download continuano)",
@@ -1106,6 +1178,7 @@ impl App {
                 .clicked()
             {
                 self.show_legal = !self.show_legal;
+                self.legal_reminder = false;
             }
         });
         ui.label(

@@ -45,6 +45,10 @@ pub struct Config {
     pub tray: bool,
     /// l'utente ha letto e accettato le avvertenze legali (si chiede al primo avvio)
     pub terms_accepted: bool,
+    /// quante volte è stato avviato (serve a ripetere l'avviso legale ogni tanto)
+    pub launch_count: u32,
+    /// avviso di sistema quando un download finisce
+    pub notify_done: bool,
 }
 
 impl Default for Config {
@@ -64,6 +68,8 @@ impl Default for Config {
             torrent_up_kbps: 0,
             tray: true,
             terms_accepted: false,
+            launch_count: 0,
+            notify_done: true,
             dm_connections: 8,
             speed_limit_kbps: 0,
             out_dir,
